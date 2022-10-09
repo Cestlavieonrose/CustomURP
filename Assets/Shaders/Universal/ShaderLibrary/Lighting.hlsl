@@ -150,7 +150,7 @@ half OneMinusReflectivityMetallic(half metallic)
     return oneMinusDielectricSpec - metallic * oneMinusDielectricSpec;
 }
 
-inline void InitializeBRDFDataDirect(half3 diffuse, half3 specular, half smoothness, out BRDFData outBRDFData)
+inline void InitializeBRDFDataDirect(half3 diffuse, half3 specular, half smoothness, inout half alpha, out BRDFData outBRDFData)
 {
     outBRDFData.diffuse = diffuse;
     outBRDFData.specular = specular;
@@ -162,6 +162,11 @@ inline void InitializeBRDFDataDirect(half3 diffuse, half3 specular, half smoothn
     outBRDFData.roughness2          = max(outBRDFData.roughness * outBRDFData.roughness, HALF_MIN);
     outBRDFData.normalizationTerm   = outBRDFData.roughness * 4.0h + 2.0h;
     outBRDFData.roughness2MinusOne  = outBRDFData.roughness2 - 1.0h;
+
+#ifdef _ALPHAPREMULTIPLY_ON
+    outBRDFData.diffuse *= alpha;
+    // alpha = alpha * oneMinusReflectivity + reflectivity; // NOTE: alpha modified and propagated up.
+#endif
 }
 
 //309:初始化BRDF结构数据
@@ -177,7 +182,7 @@ inline void InitializeBRDFData(half3 albedo, half metallic, half smoothness, ino
     //非金属的镜面反射应该是白色的，最后我们通过金属度在最小反射率和表面颜色之间进行插值得到BRDF的镜面反射颜色。
     half3 brdfSpecular = lerp(kDielectricSpec.rgb, albedo, metallic);
 
-    InitializeBRDFDataDirect(brdfDiffuse, brdfSpecular, smoothness, outBRDFData);
+    InitializeBRDFDataDirect(brdfDiffuse, brdfSpecular, smoothness, alpha, outBRDFData);
 }
 
 

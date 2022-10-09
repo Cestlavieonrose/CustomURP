@@ -9,7 +9,8 @@ Shader "CustomRP/Lit"
         _BaseMap("Texture", 2D) = "white" {}
         //透明度测试的阈值
         _Cutoff("Alpha Cutoff", Range(0.0, 1.0)) = 0.5
-     //   [Toggle(_CLIPPING)] _Clipping("Alpha Clipping", Float) = 0
+        [Toggle(_CLIPPING)] _Clipping("Alpha Clipping", Float) = 0
+        [Toggle(_ALPHAPREMULTIPLY_ON)] _PremulAlpha("Alpha Premultiply", Float) = 0
         //设置混合模式
         [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend ("Sec Blend", Float) = 1
         [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend ("Dst Blend", Float) = 0
@@ -38,9 +39,11 @@ Shader "CustomRP/Lit"
             // Universal Pipeline keywords
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             // Material Keywords
+            #pragma shader_feature_local_fragment _ALPHAPREMULTIPLY_ON
+            #pragma shader_feature_local_fragment _CLIPPING
             #pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF //PBR是否忽略高光部分的计算
 
-            #pragma shader_feature _CLIPPING
+            
             #pragma multi_compile_instancing
             #pragma vertex LitPassVertex
             #pragma fragment LitPassFragment
