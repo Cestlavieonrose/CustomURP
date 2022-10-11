@@ -355,6 +355,10 @@ namespace UnityEngine.Rendering.Custom
             var settings = asset;
             cameraData.camera = camera;
 
+            bool anyShadowsEnabled = settings.supportsMainLightShadows || settings.supportsAdditionalLightShadows;
+            cameraData.maxShadowDistance = Mathf.Min(settings.shadowDistance, camera.farClipPlane);
+            cameraData.maxShadowDistance = (anyShadowsEnabled && cameraData.maxShadowDistance >= camera.nearClipPlane) ? cameraData.maxShadowDistance : 0.0f;
+
             bool isSceneViewCamera = cameraData.isSceneViewCamera;
             if (isSceneViewCamera)
             {
@@ -365,6 +369,7 @@ namespace UnityEngine.Rendering.Custom
             {
                 cameraData.renderType = additionalCameraData.renderType;
                 cameraData.renderer = additionalCameraData.scriptableRenderer;
+                cameraData.maxShadowDistance = (additionalCameraData.renderShadows) ? cameraData.maxShadowDistance : 0.0f;
             }
             else
             {

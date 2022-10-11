@@ -7,7 +7,7 @@ using UnityEngine.Profiling;
 namespace UnityEngine.Rendering.Custom
 {
     //ͨ��RP��scriptable renderer
-    //���ַ�������ÿ�������δ��������֧�ֲ�ͬ����Ⱦ����������һ����Ⱦ��һ�˳���ͼ��һ����Ⱦ��ά��ͼ����ǰ����ӳ���Ⱦ������
+    //���ַ�������ÿ�������δ��������֧�ֲ��?����Ⱦ����������һ����Ⱦ��һ�˳���ͼ��һ����Ⱦ��ά��ͼ����ǰ����ӳ���Ⱦ������?
     public abstract class ScriptableRenderer : IDisposable
     {
         private static class Profiling
@@ -308,7 +308,7 @@ namespace UnityEngine.Rendering.Custom
 
                 using (new ProfilingScope(cmd, Profiling.setupCamera))
                 {
-                    //�������������Ӧ����������,������þ����Լ�����һЩ���ԡ�
+                    //�������������Ӧ����������?,������þ����Լ�����һЩ���ԡ�?
                     context.SetupCameraProperties(camera);
                     SetCameraMatrices(cmd, ref cameraData, true);
 
@@ -389,7 +389,7 @@ namespace UnityEngine.Rendering.Custom
             using (new ProfilingScope(cmd, Profiling.RenderPass.configure))
             {
                 renderPass.Configure(cmd, cameraData.cameraTargetDescriptor);
-                //�����ȾĿ�� ClearRenderTarget
+                //�����ȾĿ��? ClearRenderTarget
                 SetRenderPassAttachments(cmd, renderPass, ref cameraData);
             }
 

@@ -35,6 +35,7 @@ namespace UnityEngine.Rendering.Custom
         DrawSkyboxPass m_DrawSkyboxPass;
         TransparentSettingsPass m_TransparentSettingsPass;
         DrawObjectsPass m_RenderTransparentForwardPass;
+        MainLightShadowCasterPass m_MainLightShadowCasterPass;
 
         ForwardLights m_ForwardLights;
 
@@ -50,6 +51,7 @@ namespace UnityEngine.Rendering.Custom
 
             m_ForwardLights = new ForwardLights();
             this.m_RenderingMode = RenderingMode.Forward;
+            m_MainLightShadowCasterPass = new MainLightShadowCasterPass(RenderPassEvent.BeforeRenderingShadows);
 
             if (this.renderingMode == RenderingMode.Deferred)
             {
@@ -118,8 +120,8 @@ namespace UnityEngine.Rendering.Custom
                 EnqueuePass(m_DrawSkyboxPass);
                 return;
             }
-
-            bool transparentsNeedSettingsPass = m_TransparentSettingsPass.Setup(ref renderingData);
+            bool mainLightShadows = m_MainLightShadowCasterPass.Setup(ref renderingData);//304
+            bool transparentsNeedSettingsPass = m_TransparentSettingsPass.Setup(ref renderingData);//306
 
             var createColorTexture = false;
             bool createDepthTexture = false;
@@ -138,12 +140,17 @@ namespace UnityEngine.Rendering.Custom
                 m_ActiveCameraDepthAttachment = m_CameraDepthAttachment;
             }
 
+            
+
             // Assign camera targets (color and depth)
             var activeColorRenderTargetId = m_ActiveCameraColorAttachment.Identifier();
             var activeDepthRenderTargetId = m_ActiveCameraDepthAttachment.Identifier();
             ConfigureCameraTarget(activeColorRenderTargetId, activeDepthRenderTargetId);
 
-            EnqueuePass(m_RenderOpaqueForwardPass);
+            if (mainLightShadows)//390
+                EnqueuePass(m_MainLightShadowCasterPass);
+            EnqueuePass(m_RenderOpaqueForwardPass);//424
+            
 
             Skybox cameraSkybox;
             cameraData.camera.TryGetComponent<Skybox>(out cameraSkybox);

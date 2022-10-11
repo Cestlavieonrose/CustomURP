@@ -211,6 +211,23 @@ namespace UnityEngine.Rendering.Custom
                 cmd.SetGlobalMatrix(ShaderPropertyId.inverseViewAndProjectionMatrix, inverseViewProjection);
             }
         }
+
+        /// <summary>
+        /// Checks if a render texture format is supported by the run-time system.
+        /// Similar to <see cref="SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat)"/>, but doesn't allocate memory.
+        /// </summary>
+        /// <param name="format">The format to look up.</param>
+        /// <returns>Returns true if the graphics card supports the given <c>RenderTextureFormat</c></returns>
+        public static bool SupportsRenderTextureFormat(RenderTextureFormat format)
+        {
+            if (!m_RenderTextureFormatSupport.TryGetValue(format, out var support))
+            {
+                support = SystemInfo.SupportsRenderTextureFormat(format);
+                m_RenderTextureFormatSupport.Add(format, support);
+            }
+
+            return support;
+        }
     }
 }
 

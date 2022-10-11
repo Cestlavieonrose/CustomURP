@@ -359,6 +359,8 @@ namespace UnityEngine.Rendering.Custom
         // DrawObjectsPass
         DrawOpaqueObjects,
         DrawTransparentObjects,
+
+        MainLightShadow,
     }
 }
 

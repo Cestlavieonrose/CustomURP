@@ -333,6 +333,15 @@ namespace UnityEngine.Rendering.Custom
             get { return m_MixedLightingSupported; }
         }
 
+        ///570:é˜´å½±æœ€å¤§è·ç¦» <summary>
+        /// Controls the maximum distance at which shadows are visible.
+        /// </summary>
+        public float shadowDistance
+        {
+            get { return m_ShadowDistance; }
+            set { m_ShadowDistance = Mathf.Max(0.0f, value); }
+        }
+
         /// <summary>
         /// The Shadow Depth Bias, controls the offset of the lit pixels.
         /// </summary>
@@ -371,7 +380,7 @@ namespace UnityEngine.Rendering.Custom
                 m_ShadowCascadeCount = value;
             }
         }
-
+        //é˜´å½±è´´å›¾å¤§å°
         public int mainLightShadowmapResolution
         {
             get { return (int)m_MainLightShadowmapResolution; }
@@ -455,8 +464,8 @@ namespace UnityEngine.Rendering.Custom
             return Mathf.Max(0.0f, Mathf.Min(value, CustomRenderPipeline.maxShadowBias));
         }
 
-        //ÒÔÕâ¸ömsaaSampleCountÎª×¼£¬Èç¹ûquality settingÃæ°åÀïµÄºÍÕâ¸ö²»Ò»Ñù£¬ÄÇÃ´¹ÜÏß»á×Ô¶¯½«Õâ¸öÖµĞŞ¸Äµ½quality settingÃæ°åÀïµÄmsaaSampleCount
-        //¸Ã·½·¨ÔÚ¹ÜÏßÊµÀı»¯ºóÖ»Ö´ĞĞÒ»´Î£¬ÎŞ·¨ÔÚÓÎÏ·ÔËĞĞÖĞÊµÊ±ĞŞ¸Ä£¬±ØĞëÍ£Ö¹ÓÎÏ·ºóÖØĞÂÉèÖÃ
+        //ï¿½ï¿½ï¿½ï¿½ï¿½msaaSampleCountÎª×¼ï¿½ï¿½ï¿½ï¿½ï¿½quality settingï¿½ï¿½ï¿½ï¿½ï¿½Äºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã´ï¿½ï¿½ï¿½ß»ï¿½ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½Ş¸Äµï¿½quality settingï¿½ï¿½ï¿½ï¿½ï¿½ï¿½msaaSampleCount
+        //ï¿½Ã·ï¿½ï¿½ï¿½ï¿½Ú¹ï¿½ï¿½ï¿½Êµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö»Ö´ï¿½ï¿½Ò»ï¿½Î£ï¿½ï¿½Ş·ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÊµÊ±ï¿½Ş¸Ä£ï¿½ï¿½ï¿½ï¿½ï¿½Í£Ö¹ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         public int msaaSampleCount
         {
             get { return (int)m_MSAA; }

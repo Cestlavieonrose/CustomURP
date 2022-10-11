@@ -45,6 +45,8 @@ namespace UnityEngine.Rendering.Custom
     [ImageEffectAllowedInSceneView]
     public class CustomAdditionalCameraData : MonoBehaviour, ISerializationCallbackReceiver
     {
+        [SerializeField]
+        bool m_RenderShadows = true;
         [SerializeField] CameraRenderType m_CameraType = CameraRenderType.Base;
         [SerializeField] List<Camera> m_Cameras = new List<Camera>();
         [SerializeField] int m_RendererIndex = -1;
@@ -93,6 +95,15 @@ namespace UnityEngine.Rendering.Custom
         {
             get => m_RenderPostProcessing;
             set => m_RenderPostProcessing = value;
+        }
+
+        /// <summary>
+        /// Controls if this camera should render shadows.
+        /// </summary>
+        public bool renderShadows
+        {
+            get => m_RenderShadows;
+            set => m_RenderShadows = value;
         }
 
         /// <summary>

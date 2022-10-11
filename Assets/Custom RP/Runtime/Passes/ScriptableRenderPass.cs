@@ -158,7 +158,7 @@ namespace UnityEngine.Rendering.Custom
             {
                 perObjectData = renderingData.perObjectData,
                 mainLightIndex = renderingData.lightData.mainLightIndex,
-                //设置渲染时批处理的使用状�?
+                //设置渲染时批处理的使用状�?
                 enableDynamicBatching = renderingData.supportsDynamicBatching,
 
                 // Disable instancing for preview cameras. This is consistent with the built-in forward renderer. Also fixes case 1127324.
@@ -188,6 +188,65 @@ namespace UnityEngine.Rendering.Custom
             for (int i = 1; i < shaderTagIdList.Count; ++i)
                 settings.SetShaderPassName(i, shaderTagIdList[i]);
             return settings;
+        }
+
+        /// <summary>
+        /// Configures clearing for the render targets for this render pass. Call this inside Configure.
+        /// </summary>
+        /// <param name="clearFlag">ClearFlag containing information about what targets to clear.</param>
+        /// <param name="clearColor">Clear color.</param>
+        /// <seealso cref="Configure"/>
+        public void ConfigureClear(ClearFlag clearFlag, Color clearColor)
+        {
+            m_ClearFlag = clearFlag;
+            m_ClearColor = clearColor;
+        }
+
+        /// <summary>
+        /// Configures render targets for this render pass. Call this instead of CommandBuffer.SetRenderTarget.
+        /// This method should be called inside Configure.
+        /// </summary>
+        /// <param name="colorAttachment">Color attachment identifier.</param>
+        /// <seealso cref="Configure"/>
+        public void ConfigureTarget(RenderTargetIdentifier colorAttachment)
+        {
+            overrideCameraTarget = true;
+
+            m_ColorAttachments[0] = colorAttachment;
+            for (int i = 1; i < m_ColorAttachments.Length; ++i)
+                m_ColorAttachments[i] = 0;
+        }
+
+        /// <summary>
+        /// Configures render targets for this render pass. Call this instead of CommandBuffer.SetRenderTarget.
+        /// This method should be called inside Configure.
+        /// </summary>
+        /// <param name="colorAttachment">Color attachment identifier.</param>
+        /// <param name="depthAttachment">Depth attachment identifier.</param>
+        /// <seealso cref="Configure"/>
+        public void ConfigureTarget(RenderTargetIdentifier colorAttachment, RenderTargetIdentifier depthAttachment)
+        {
+            m_DepthAttachment = depthAttachment;
+            ConfigureTarget(colorAttachment);
+        }
+
+        /// <summary>
+        /// Configures render targets for this render pass. Call this instead of CommandBuffer.SetRenderTarget.
+        /// This method should be called inside Configure.
+        /// </summary>
+        /// <param name="colorAttachment">Color attachment identifier.</param>
+        /// <param name="depthAttachment">Depth attachment identifier.</param>
+        /// <seealso cref="Configure"/>
+        public void ConfigureTarget(RenderTargetIdentifier[] colorAttachments, RenderTargetIdentifier depthAttachment)
+        {
+            overrideCameraTarget = true;
+
+            uint nonNullColorBuffers = RenderingUtils.GetValidColorBufferCount(colorAttachments);
+            if( nonNullColorBuffers > SystemInfo.supportedRenderTargetCount)
+                Debug.LogError("Trying to set " + nonNullColorBuffers + " renderTargets, which is more than the maximum supported:" + SystemInfo.supportedRenderTargetCount);
+
+            m_ColorAttachments = colorAttachments;
+            m_DepthAttachment = depthAttachment;
         }
 
         /// <summary>
