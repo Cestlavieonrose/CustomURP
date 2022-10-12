@@ -75,7 +75,7 @@ namespace UnityEngine.Rendering.Custom
             ref ShadowSliceData shadowSliceData, ref ShadowDrawingSettings settings,
             Matrix4x4 proj, Matrix4x4 view)
         {
-            cmd.SetViewport(new Rect(shadowSliceData.offsetX, shadowSliceData.offsetY, shadowSliceData.resolution, shadowSliceData.resolution));
+            cmd.SetViewport(new Rect(0, 0, shadowSliceData.resolution, shadowSliceData.resolution));
             cmd.SetViewProjectionMatrices(view, proj);
             context.ExecuteCommandBuffer(cmd);
             cmd.Clear();
@@ -161,10 +161,10 @@ namespace UnityEngine.Rendering.Custom
             return new Vector4(depthBias, normalBias, 0.0f, 0.0f);
         }
 
-        public static void SetupShadowCasterConstantBuffer(CommandBuffer cmd, ref VisibleLight shadowLight, Vector4 shadowBias)
+        public static void SetupShadowCasterConstantBuffer(CommandBuffer cmd, ref VisibleLight shadowLight)
         {
             Vector3 lightDirection = -shadowLight.localToWorldMatrix.GetColumn(2);
-            cmd.SetGlobalVector("_ShadowBias", shadowBias);
+            // cmd.SetGlobalVector("_ShadowBias", shadowBias);
             cmd.SetGlobalVector("_LightDirection", new Vector4(lightDirection.x, lightDirection.y, lightDirection.z, 0.0f));
         }
 
@@ -177,10 +177,13 @@ namespace UnityEngine.Rendering.Custom
             return shadowTexture;
         }
 
+        //返回一个从世界空间转到阴影纹理图块空间的矩阵
         static Matrix4x4 GetShadowTransform(Matrix4x4 proj, Matrix4x4 view)
         {
             // Currently CullResults ComputeDirectionalShadowMatricesAndCullingPrimitives doesn't
             // apply z reversal to projection matrix. We need to do it manually here.
+            //首先判断当前平台图形API,如果使用了反向Z-Buffer，就将矩阵的Z分量的值进行反转。
+            //（OpenGL中0是0深度，1是最大深度。其它图形API，如DirectX中0是0深度，-1是最大深度。由于深度缓冲精度受限（8、16、24bit），能表示的深度数量也有限，而通过反转能更好利用这些位，其它图形API如DirectX是使用了反向深度缓冲的）。
             if (SystemInfo.usesReversedZBuffer)
             {
                 proj.m20 = -proj.m20;
@@ -188,9 +191,10 @@ namespace UnityEngine.Rendering.Custom
                 proj.m22 = -proj.m22;
                 proj.m23 = -proj.m23;
             }
-
+            //投影矩阵乘以视图矩阵，得到从世界空间到灯光空间的转换矩阵
             Matrix4x4 worldToShadow = proj * view;
-
+            //设置矩阵坐标
+            //然后在立方体内定义裁剪空间，坐标是从-1到1，中心点是0。但是深度和纹理坐标是从0到1。要将此转换通过，需要把XYZ的尺寸进行缩放和偏移一半的方式拷贝到矩阵中，我们可以利用矩阵乘法做到这一点，但是会导致大量和0之间的乘法以及不必要的加法，所以我们直接调整矩阵。
             var textureScaleAndBias = Matrix4x4.identity;
             textureScaleAndBias.m00 = 0.5f;
             textureScaleAndBias.m11 = 0.5f;

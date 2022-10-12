@@ -23,6 +23,7 @@ public class CustomShaderGUI : ShaderGUI
             FadePreset();
             TransparentPreset();
         }
+        // ReceiveShadowPreset();
     }
 
     //设置材质属性
@@ -103,6 +104,17 @@ public class CustomShaderGUI : ShaderGUI
             return true;
         }
         return false;
+    }
+
+    void ReceiveShadowPreset()
+    {
+        if (GUILayout.Toggle(true, "接受阴影"))
+        {
+            SetKeyWord("_RECEIVE_SHADOWS_OFF", false);
+        } else 
+        {
+            SetKeyWord("_RECEIVE_SHADOWS_OFF", true);
+        }
     }
 
     void OpaquePreset()

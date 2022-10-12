@@ -13,14 +13,14 @@
 struct InputData
 {
     float3  positionWS;
-    // half3   normalWS;
+    half3   normalWS;
     half3   viewDirectionWS;
-    // float4  shadowCoord;
-    // half    fogCoord;
-    // half3   vertexLighting;
-    // half3   bakedGI;
-    // float2  normalizedScreenSpaceUV;
-    // half4   shadowMask;
+    float4  shadowCoord;
+    half    fogCoord;
+    half3   vertexLighting;
+    half3   bakedGI;
+    float2  normalizedScreenSpaceUV;
+    half4   shadowMask;
 };
 
 //主光源，方向光：方向，否则传递位置

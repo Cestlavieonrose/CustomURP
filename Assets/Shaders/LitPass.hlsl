@@ -1,10 +1,10 @@
 #ifndef CUSTOM_LIT_PASS_INCLUDED
 #define CUSTOM_LIT_PASS_INCLUDED
-//temp define
-#define REQUIRES_WORLD_SPACE_POS_INTERPOLATOR
+
 #include "Universal/ShaderLibrary/Core.hlsl"
 #include "Universal/ShaderLibrary/SurfaceData.hlsl"
 #include "Universal/ShaderLibrary/Lighting.hlsl"
+#include "Universal/ShaderLibrary/Shadows.hlsl"
 
 
 TEXTURE2D(_BaseMap);
@@ -65,6 +65,17 @@ void InitializeInputData(Varyings input, out InputData inputData)
 
     half3 viewDirWS = SafeNormalize(input.viewDirWS);
     inputData.viewDirectionWS = viewDirWS;
+
+#if defined(MAIN_LIGHT_CALCULATE_SHADOWS) //材质开启接受，主光源开启阴影caster
+    half cascadeIndex = 0;
+    float4 shadowCoord = mul(_MainLightWorldToShadow[cascadeIndex], float4(input.positionWS, 1.0));
+
+    float4 shadowPos = float4(shadowCoord.xyz, cascadeIndex);
+    inputData.shadowCoord = shadowPos;//TransformWorldToShadowCoord(inputData.positionWS);
+#else
+    inputData.shadowCoord = float4(0, 0, 0, 0);
+#endif
+
 }
 
 
@@ -110,13 +121,14 @@ float4 LitPassFragment(Varyings input):SV_Target
     surface.metallic = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Metallic);
     surface.smoothness = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Smoothness);
     //定义一个inputData
-    InputData inputData = (InputData)0;
+    InputData inputData;
     InitializeInputData(input, inputData);
 
     //通过表面属性计算最终光照结果
     float3 color = UniversalFragmentPBR(inputData, surface);
+
     return float4(color, surface.alpha);
-    // return float4(1,1,1,1);
+
 }
 
 #endif

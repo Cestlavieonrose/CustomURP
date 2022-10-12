@@ -9,8 +9,8 @@ namespace UnityEngine.Rendering.Custom.Internal
     {
         private static class MainLightShadowConstantBuffer
         {
-            // public static int _WorldToShadow;
-            // public static int _ShadowParams;
+            public static int _WorldToShadow; //世界到阴影空间的转换矩阵
+            public static int _ShadowParams;//阴影参数：light.shadowStrength, softShadowsProp, oneOverFadeDist, minusStartFade
             // public static int _CascadeShadowSplitSpheres0;
             // public static int _CascadeShadowSplitSpheres1;
             // public static int _CascadeShadowSplitSpheres2;
@@ -24,6 +24,7 @@ namespace UnityEngine.Rendering.Custom.Internal
         }
         //shadow贴图的位数
         const int k_ShadowmapBufferBits = 16;
+        RenderTargetHandle m_MainLightShadowmap;
         RenderTexture m_MainLightShadowmapTexture;
         int m_ShadowmapWidth;
         int m_ShadowmapHeight;
@@ -33,6 +34,7 @@ namespace UnityEngine.Rendering.Custom.Internal
         Matrix4x4 viewMatrix; 
         Matrix4x4 projectionMatrix;
         ShadowSliceData[] m_CascadeSlices;
+        Matrix4x4[] m_MainLightShadowMatrices;
 
         const int k_MaxCascades = 4;
         ProfilingSampler m_ProfilingSetupSampler = new ProfilingSampler("Setup Main Shadowmap");
@@ -42,7 +44,13 @@ namespace UnityEngine.Rendering.Custom.Internal
             base.profilingSampler = new ProfilingSampler(nameof(MainLightShadowCasterPass));
             renderPassEvent = evt;
 
+            m_MainLightShadowMatrices = new Matrix4x4[k_MaxCascades + 1];
             m_CascadeSlices = new ShadowSliceData[k_MaxCascades];
+
+            MainLightShadowConstantBuffer._WorldToShadow = Shader.PropertyToID("_MainLightWorldToShadow");
+            MainLightShadowConstantBuffer._ShadowParams = Shader.PropertyToID("_MainLightShadowParams");
+
+            m_MainLightShadowmap.Init("_MainLightShadowmapTexture");
         }
 
         public bool Setup(ref RenderingData renderingData)
@@ -100,6 +108,11 @@ namespace UnityEngine.Rendering.Custom.Internal
         void Clear()
         {
             m_MainLightShadowmapTexture = null;
+            for (int i = 0; i < m_MainLightShadowMatrices.Length; ++i)
+                m_MainLightShadowMatrices[i] = Matrix4x4.identity;
+
+            for (int i = 0; i < m_CascadeSlices.Length; ++i)
+                m_CascadeSlices[i].Clear();
         }
 
 
@@ -126,9 +139,12 @@ namespace UnityEngine.Rendering.Custom.Internal
             using (new ProfilingScope(cmd, ProfilingSampler.Get(URPProfileId.MainLightShadow)))
             {
                 var settings = new ShadowDrawingSettings(cullResults, shadowLightIndex);
+                ShadowUtils.SetupShadowCasterConstantBuffer(cmd, ref shadowLight);
                 ShadowUtils.RenderShadowSlice(cmd, ref context, ref m_CascadeSlices[0],  ref settings, projectionMatrix, viewMatrix);
 
                 CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.MainLightShadows, true);
+
+                SetupMainLightShadowReceiverConstants(cmd, shadowLight, shadowData.supportsSoftShadows);
             }
 
             context.ExecuteCommandBuffer(cmd);
@@ -154,5 +170,40 @@ namespace UnityEngine.Rendering.Custom.Internal
             }
         }
 
+        void SetupMainLightShadowReceiverConstants(CommandBuffer cmd, VisibleLight shadowLight, bool supportsSoftShadows)
+        {
+            Light light = shadowLight.light;
+            bool softShadows = shadowLight.light.shadows == LightShadows.Soft && supportsSoftShadows;
+
+            int cascadeCount = m_ShadowCasterCascadesCount;
+            // for (int i = 0; i < cascadeCount; ++i)
+                m_MainLightShadowMatrices[0] = m_CascadeSlices[0].shadowTransform;
+
+            // We setup and additional a no-op WorldToShadow matrix in the last index
+            // because the ComputeCascadeIndex function in Shadows.hlsl can return an index
+            // out of bounds. (position not inside any cascade) and we want to avoid branching
+            // Matrix4x4 noOpShadowMatrix = Matrix4x4.zero;
+            // noOpShadowMatrix.m22 = (SystemInfo.usesReversedZBuffer) ? 1.0f : 0.0f;
+            // for (int i = cascadeCount; i <= k_MaxCascades; ++i)
+                // m_MainLightShadowMatrices[0] = noOpShadowMatrix;
+
+            float invShadowAtlasWidth = 1.0f / m_ShadowmapWidth;
+            float invShadowAtlasHeight = 1.0f / m_ShadowmapHeight;
+            float invHalfShadowAtlasWidth = 0.5f * invShadowAtlasWidth;
+            float invHalfShadowAtlasHeight = 0.5f * invShadowAtlasHeight;
+            float softShadowsProp = softShadows ? 1.0f : 0.0f;
+
+            //To make the shadow fading fit into a single MAD instruction:
+            //distanceCamToPixel2 * oneOverFadeDist + minusStartFade (single MAD)
+            float startFade = m_MaxShadowDistance * 0.9f;
+            float oneOverFadeDist = 1/(m_MaxShadowDistance - startFade);
+            float minusStartFade = -startFade * oneOverFadeDist;
+
+            //设置阴影贴图
+            cmd.SetGlobalTexture(m_MainLightShadowmap.id, m_MainLightShadowmapTexture);
+            //当渲染完阴影后，调用buffer.SetGlobalMatrixArray方法将转换矩阵发送到GPU。
+            cmd.SetGlobalMatrixArray(MainLightShadowConstantBuffer._WorldToShadow, m_MainLightShadowMatrices);
+            cmd.SetGlobalVector(MainLightShadowConstantBuffer._ShadowParams, new Vector4(light.shadowStrength, softShadowsProp, oneOverFadeDist, minusStartFade));
+        }
     };
 }

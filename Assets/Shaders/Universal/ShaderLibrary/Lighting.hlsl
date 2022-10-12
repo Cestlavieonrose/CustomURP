@@ -2,6 +2,7 @@
 #define UNIVERSAL_LIGHTING_INCLUDED
 #include "../../Core/ShaderLibrary/CommonMaterial.hlsl"
 #include "Core.hlsl"
+#include "Shadows.hlsl"
 
 ///////////////////////////////////////////////////////////////////////////////
 //                         44: Light Helpers                                    //
@@ -12,6 +13,7 @@ struct Light
 {
     half3   direction;
     half3   color;
+    half    shadowAttenuation; //阴影度
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -22,8 +24,15 @@ Light GetMainLight()
 {
     Light light;
     light.direction = _MainLightPosition.xyz;
+    light.shadowAttenuation = 1.0;
     light.color = _MainLightColor.rgb;
+    return light;
+}
 
+Light GetMainLight(float4 shadowCoord, float3 positionWS)
+{
+    Light light = GetMainLight();
+    light.shadowAttenuation = MainLightShadow(shadowCoord, positionWS);
     return light;
 }
 
@@ -273,7 +282,7 @@ half3 UniversalFragmentPBR(InputData inputData, SurfaceData surfaceData)
     // NOTE: can modify alpha
     InitializeBRDFData(surfaceData.albedo, surfaceData.metallic, surfaceData.smoothness, surfaceData.alpha, brdfData);
 
-    Light mainLight = GetMainLight();
+    Light mainLight = GetMainLight(inputData.shadowCoord, inputData.positionWS);
     // half3 color = GetLighting(surfaceData, mainLight);
     half3 color = LightingPhysicallyBased(brdfData, mainLight, surfaceData.normalTS, inputData.viewDirectionWS, specularHighlightsOff);
 
