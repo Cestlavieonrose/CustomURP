@@ -14,7 +14,7 @@ Shader "CustomRP/Lit"
         [Toggle(_ALPHAPREMULTIPLY_ON)] _PremulAlpha("Alpha Premultiply", Float) = 0
         [Toggle(_RECEIVE_SHADOWS_OFF)] _ReceiveShadowsOff ("不接受阴影", Float) = 0
         //设置混合模式
-        [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend ("Sec Blend", Float) = 1
+        [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend ("Src Blend", Float) = 1
         [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend ("Dst Blend", Float) = 0
         //默认写入深度缓冲区
         [Enum(Off, 0, On, 1)]_ZWrite("Z Write", Float) = 1
@@ -54,6 +54,7 @@ Shader "CustomRP/Lit"
             #pragma multi_compile_instancing
             #pragma vertex LitPassVertex
             #pragma fragment LitPassFragment
+            #include "LitInput.hlsl"
             #include "LitPass.hlsl"
             ENDHLSL
         }
@@ -77,6 +78,7 @@ Shader "CustomRP/Lit"
             #pragma multi_compile_instancing
             #pragma vertex ShadowCasterPassVertex
             #pragma fragment ShadowCasterPassFragment
+            #include "LitInput.hlsl"
             #include "ShadowCasterPass.hlsl"
             ENDHLSL
         }

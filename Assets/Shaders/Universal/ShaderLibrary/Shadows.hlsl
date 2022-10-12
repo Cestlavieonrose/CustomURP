@@ -1,6 +1,7 @@
 #ifndef UNIVERSAL_SHADOWS_INCLUDED
 #define UNIVERSAL_SHADOWS_INCLUDED
 
+#include "../../Core/ShaderLibrary/Common.hlsl"
 #include "Core.hlsl"
 
 #define MAX_SHADOW_CASCADES 4
@@ -71,11 +72,12 @@ real SampleShadowmap(TEXTURE2D_SHADOW_PARAM(ShadowMap, sampler_ShadowMap), float
     attenuation = SAMPLE_TEXTURE2D_SHADOW(ShadowMap, sampler_ShadowMap, shadowCoord.xyz);
 // #endif
 
-    attenuation = LerpWhiteTo(attenuation, shadowStrength);
+    // attenuation = LerpWhiteTo(attenuation, shadowStrength);
+    attenuation = lerp(1.0, attenuation, shadowStrength);
 
     // Shadow coords that fall out of the light frustum volume must always return attenuation 1.0
     // TODO: We could use branch here to save some perf on some platforms.
-    return BEYOND_SHADOW_FAR(shadowCoord) ? 1.0 : attenuation;
+    return attenuation;//BEYOND_SHADOW_FAR(shadowCoord) ? 1.0 : attenuation;
 }
 
 //247:

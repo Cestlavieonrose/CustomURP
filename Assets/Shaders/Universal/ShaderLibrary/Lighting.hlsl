@@ -1,7 +1,10 @@
 #ifndef UNIVERSAL_LIGHTING_INCLUDED
 #define UNIVERSAL_LIGHTING_INCLUDED
+
+#include "../../Core/ShaderLibrary/Common.hlsl"
 #include "../../Core/ShaderLibrary/CommonMaterial.hlsl"
 #include "Core.hlsl"
+#include "SurfaceData.hlsl"
 #include "Shadows.hlsl"
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -32,7 +35,7 @@ Light GetMainLight()
 Light GetMainLight(float4 shadowCoord, float3 positionWS)
 {
     Light light = GetMainLight();
-    light.shadowAttenuation = MainLightShadow(shadowCoord, positionWS);
+    light.shadowAttenuation = MainLightRealtimeShadow(shadowCoord);
     return light;
 }
 
@@ -244,10 +247,13 @@ return specularTerm;
 
 //702：pbr光照计算
 half3 LightingPhysicallyBased(BRDFData brdfData, 
-    half3 lightColor, half3 lightDirectionWS,
+    half3 lightColor, half3 lightDirectionWS, half lightAttenuation,
     half3 normalWS, half3 viewDirectionWS,
     bool specularHighlightsOff)
 {
+    half NdotL = saturate(dot(normalWS, lightDirectionWS));
+    half3 radiance = lightColor * (lightAttenuation * NdotL);
+
     half3 brdf = brdfData.diffuse;
 #ifndef _SPECULARHIGHLIGHTS_OFF
     [branch] if (!specularHighlightsOff)
@@ -256,12 +262,12 @@ half3 LightingPhysicallyBased(BRDFData brdfData,
     }
 #endif // _SPECULARHIGHLIGHTS_OFF
 
-    return brdf;
+    return brdf * radiance;
 }
 //737：pbr光照计算
 half3 LightingPhysicallyBased(BRDFData brdfData, Light light, half3 normalWS, half3 viewDirectionWS, bool specularHighlightsOff)
 {
-    return LightingPhysicallyBased(brdfData, light.color, light.direction, normalWS, viewDirectionWS, specularHighlightsOff);
+    return LightingPhysicallyBased(brdfData, light.color, light.direction, light.shadowAttenuation, normalWS, viewDirectionWS, specularHighlightsOff);
 }
 
 
@@ -292,7 +298,6 @@ half3 UniversalFragmentPBR(InputData inputData, SurfaceData surfaceData)
     {
         Light light = GetAdditionalLight(lightIndex, inputData.positionWS);
         color += GetLighting(surfaceData, brdfData, light);
-        
     }
 #endif
     return color;

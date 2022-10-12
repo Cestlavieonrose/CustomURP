@@ -1,33 +1,6 @@
 #ifndef CUSTOM_LIT_PASS_INCLUDED
 #define CUSTOM_LIT_PASS_INCLUDED
-
-#include "Universal/ShaderLibrary/Core.hlsl"
-#include "Universal/ShaderLibrary/SurfaceData.hlsl"
 #include "Universal/ShaderLibrary/Lighting.hlsl"
-#include "Universal/ShaderLibrary/Shadows.hlsl"
-
-
-TEXTURE2D(_BaseMap);
-SAMPLER(sampler_BaseMap);
-//所有材质的属性我们需要在常量区缓冲区里定义
-//并非所有的平台都支持常量缓冲区，可以使用CBUFFER_START/CBUFFER_END带代替cbuffer，这样补支持常量的缓冲区平台就会忽略掉这个cbuff
-// CBUFFER_START(UnityPerMaterial)
-//     float4 _BaseColor;
-// CBUFFER_END
-
-//目前我们还不支持每个物体实例的材质数据，且SRP Batcher优先级比较高，我们还不能得到想要的结果。
-//首先我们需要使用一个数组引用替换_BaseColor，
-//并使用UNITY_INSTANCING_BUFFER_START和UNITY_INSTANCING_BUFFER_END替换CBUFFER_START和CBUFFER_END。
-UNITY_INSTANCING_BUFFER_START(UnityPerMaterial)
-//提供纹理的缩放和平移
-UNITY_DEFINE_INSTANCED_PROP(float4, _BaseMap_ST)
-UNITY_DEFINE_INSTANCED_PROP(float4, _BaseColor)
-UNITY_DEFINE_INSTANCED_PROP(float, _Cutoff)
-
-UNITY_DEFINE_INSTANCED_PROP(half, _Metallic)
-UNITY_DEFINE_INSTANCED_PROP(half, _Smoothness)
-UNITY_INSTANCING_BUFFER_END(UnityPerMaterial)
-
 
 //用作顶点函数的输入参数
 struct Attributes
@@ -58,26 +31,17 @@ struct Varyings
 void InitializeInputData(Varyings input, out InputData inputData)
 {
     inputData = (InputData)0;
-
 #if defined(REQUIRES_WORLD_SPACE_POS_INTERPOLATOR)
     inputData.positionWS = input.positionWS;
 #endif
-
     half3 viewDirWS = SafeNormalize(input.viewDirWS);
     inputData.viewDirectionWS = viewDirWS;
-
 #if defined(MAIN_LIGHT_CALCULATE_SHADOWS) //材质开启接受，主光源开启阴影caster
-    half cascadeIndex = 0;
-    float4 shadowCoord = mul(_MainLightWorldToShadow[cascadeIndex], float4(input.positionWS, 1.0));
-
-    float4 shadowPos = float4(shadowCoord.xyz, cascadeIndex);
-    inputData.shadowCoord = shadowPos;//TransformWorldToShadowCoord(inputData.positionWS);
+    inputData.shadowCoord = TransformWorldToShadowCoord(inputData.positionWS);
 #else
     inputData.shadowCoord = float4(0, 0, 0, 0);
 #endif
-
 }
-
 
 //顶点函数
 Varyings LitPassVertex(Attributes input)
@@ -123,12 +87,9 @@ float4 LitPassFragment(Varyings input):SV_Target
     //定义一个inputData
     InputData inputData;
     InitializeInputData(input, inputData);
-
     //通过表面属性计算最终光照结果
     float3 color = UniversalFragmentPBR(inputData, surface);
-
     return float4(color, surface.alpha);
-
 }
 
 #endif
