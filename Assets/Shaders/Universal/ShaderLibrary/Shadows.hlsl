@@ -26,12 +26,12 @@ CBUFFER_START(MainLightShadows)
 // Last cascade is initialized with a no-op matrix. It always transforms
 // shadow coord to half3(0, 0, NEAR_PLANE). We use this trick to avoid
 // branching since ComputeCascadeIndex can return cascade index = MAX_SHADOW_CASCADES
-float4x4    _MainLightWorldToShadow[MAX_SHADOW_CASCADES + 1];
-float4      _CascadeShadowSplitSpheres0;
+float4x4    _MainLightWorldToShadow[MAX_SHADOW_CASCADES + 1];//阴影矩阵
+float4      _CascadeShadowSplitSpheres0; //包围球数据，xyz：球心  w：半径
 float4      _CascadeShadowSplitSpheres1;
 float4      _CascadeShadowSplitSpheres2;
 float4      _CascadeShadowSplitSpheres3;
-float4      _CascadeShadowSplitSphereRadii;
+float4      _CascadeShadowSplitSphereRadii;//每个包围球半径的平方
 half4       _MainLightShadowOffset0;
 half4       _MainLightShadowOffset1;
 half4       _MainLightShadowOffset2;
@@ -80,14 +80,29 @@ real SampleShadowmap(TEXTURE2D_SHADOW_PARAM(ShadowMap, sampler_ShadowMap), float
     return attenuation;//BEYOND_SHADOW_FAR(shadowCoord) ? 1.0 : attenuation;
 }
 
+//233:判断该点在哪个CascadeIndex包围球，这个算法不严格，但是毕竟会选出一个合适正确的index
+half ComputeCascadeIndex(float3 positionWS)
+{
+    float3 fromCenter0 = positionWS - _CascadeShadowSplitSpheres0.xyz;
+    float3 fromCenter1 = positionWS - _CascadeShadowSplitSpheres1.xyz;
+    float3 fromCenter2 = positionWS - _CascadeShadowSplitSpheres2.xyz;
+    float3 fromCenter3 = positionWS - _CascadeShadowSplitSpheres3.xyz;
+    float4 distances2 = float4(dot(fromCenter0, fromCenter0), dot(fromCenter1, fromCenter1), dot(fromCenter2, fromCenter2), dot(fromCenter3, fromCenter3));
+    //根据包围球的半径长度和面片到球心的长度做比较，判断该点在哪个包围球
+    half4 weights = half4(distances2 < _CascadeShadowSplitSphereRadii);
+    weights.yzw = saturate(weights.yzw - weights.xyz);
+
+    return 4 - dot(weights, half4(4, 3, 2, 1));
+}
+
 //247:
 float4 TransformWorldToShadowCoord(float3 positionWS)
 {
-// #ifdef _MAIN_LIGHT_SHADOWS_CASCADE
-//     half cascadeIndex = ComputeCascadeIndex(positionWS);
-// #else
+#ifdef _MAIN_LIGHT_SHADOWS_CASCADE
+    half cascadeIndex = ComputeCascadeIndex(positionWS);
+#else
     half cascadeIndex = 0;
-// #endif
+#endif
 
     float4 shadowCoord = mul(_MainLightWorldToShadow[cascadeIndex], float4(positionWS, 1.0));
 
