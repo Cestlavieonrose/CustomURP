@@ -140,7 +140,9 @@ namespace UnityEngine.Rendering.Custom
 
             // depth and normal bias scale is in shadowmap texel size in world space
             float texelSize = frustumSize / shadowResolution;
+            //解决阴影渗漏
             float depthBias = -shadowData.bias[shadowLightIndex].x * texelSize;
+            ////设置斜度比例偏差
             float normalBias = -shadowData.bias[shadowLightIndex].y * texelSize;
 
             if (shadowData.supportsSoftShadows)
@@ -158,10 +160,10 @@ namespace UnityEngine.Rendering.Custom
             return new Vector4(depthBias, normalBias, 0.0f, 0.0f);
         }
 
-        public static void SetupShadowCasterConstantBuffer(CommandBuffer cmd, ref VisibleLight shadowLight)
+        public static void SetupShadowCasterConstantBuffer(CommandBuffer cmd, ref VisibleLight shadowLight, Vector4 shadowBias)
         {
             Vector3 lightDirection = -shadowLight.localToWorldMatrix.GetColumn(2);
-            // cmd.SetGlobalVector("_ShadowBias", shadowBias);
+            cmd.SetGlobalVector("_ShadowBias", shadowBias);//x:depthbias  y:normalbias
             cmd.SetGlobalVector("_LightDirection", new Vector4(lightDirection.x, lightDirection.y, lightDirection.z, 0.0f));
         }
 
