@@ -35,7 +35,7 @@ Light GetMainLight()
 Light GetMainLight(float4 shadowCoord, float3 positionWS)
 {
     Light light = GetMainLight();
-    light.shadowAttenuation = MainLightRealtimeShadow(shadowCoord);
+    light.shadowAttenuation = MainLightShadow(shadowCoord, positionWS);
     return light;
 }
 

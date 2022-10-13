@@ -144,13 +144,26 @@ half MixRealtimeAndBakedShadows(half realtimeShadow, half bakedShadow, half shad
 {
     return lerp(realtimeShadow, bakedShadow, shadowFade);
 }
+//突然切断阴影最大距离处的阴影会显得很突兀，我们通过一种线性淡化的方式使阴影过渡变得柔和自然一些。阴影淡化应从阴影最大距离之前的一段距离开始，直到最大距离时阴影强度为0
+half GetShadowFade(float3 positionWS)
+{
+    float3 camToPixel = positionWS - _WorldSpaceCameraPos;
+    float distanceCamToPixel2 = dot(camToPixel, camToPixel);
+
+    half fade = saturate(distanceCamToPixel2 * _MainLightShadowParams.z + _MainLightShadowParams.w);
+    return fade * fade;
+}
 
 //325:获取主光源的阴影衰减
 half MainLightShadow(float4 shadowCoord, float3 positionWS)
 {
     half realtimeShadow = MainLightRealtimeShadow(shadowCoord);
     half bakedShadow = 1.0h;
+#ifdef MAIN_LIGHT_CALCULATE_SHADOWS
+    half shadowFade = GetShadowFade(positionWS);
+#else
     half shadowFade = 1.0h;
+#endif
     return MixRealtimeAndBakedShadows(realtimeShadow, bakedShadow, shadowFade);
 }
 //370://世界坐标转到阴影相机的视图坐标下
