@@ -11,11 +11,11 @@ namespace UnityEngine.Rendering.Custom.Internal
         {
             public static int _WorldToShadow; //世界到阴影空间的转换矩阵
             public static int _ShadowParams;//阴影参数：light.shadowStrength, softShadowsProp, oneOverFadeDist, minusStartFade
-            // public static int _CascadeShadowSplitSpheres0;
-            // public static int _CascadeShadowSplitSpheres1;
-            // public static int _CascadeShadowSplitSpheres2;
-            // public static int _CascadeShadowSplitSpheres3;
-            // public static int _CascadeShadowSplitSphereRadii;
+            public static int _CascadeShadowSplitSpheres0;//每个包围球的数据 center：xyz， radius：w
+            public static int _CascadeShadowSplitSpheres1;
+            public static int _CascadeShadowSplitSpheres2;
+            public static int _CascadeShadowSplitSpheres3;
+            public static int _CascadeShadowSplitSphereRadii;//我们后续需要在着色器中判断物体表面的片元是否在包围球中，可以通过该片元到球心距离的平方和球体半径的平方来比较，我们传递数据之前先计算好球体半径的平方，就不用再在着色器中计算了。
             // public static int _ShadowOffset0;
             // public static int _ShadowOffset1;
             // public static int _ShadowOffset2;
@@ -34,6 +34,11 @@ namespace UnityEngine.Rendering.Custom.Internal
         Matrix4x4 viewMatrix; 
         Matrix4x4 projectionMatrix;
         ShadowSliceData[] m_CascadeSlices;
+        //设置每个级联包围球数据cullingSphere，为一个vector4，前三位是球心坐标，最后一位是半径
+        //但因为在渲染时，摄像机的位置朝向等属性会及时改变，所以每个层级的子视截体都会不断变换，子视截体的轴对齐包围盒也要跟着变化，
+        //但这样可能导致出现前后两帧轴对齐包围盒发生突变，进而导致生成的阴影贴图的有效分辨率可能在连续的两帧中发生突变，产生阴影抖动问题，
+        //解决方案是把包围盒改为包围球，包围球随着子视截体的变化而发生大小的变化程度相对于包围盒来说小很多
+        //光的方向和球无关，所以我们所有的方向光都使用相同的包围球。
         Vector4[] m_CascadeSplitDistances;
         Matrix4x4[] m_MainLightShadowMatrices;
 
@@ -51,6 +56,11 @@ namespace UnityEngine.Rendering.Custom.Internal
 
             MainLightShadowConstantBuffer._WorldToShadow = Shader.PropertyToID("_MainLightWorldToShadow");
             MainLightShadowConstantBuffer._ShadowParams = Shader.PropertyToID("_MainLightShadowParams");
+            MainLightShadowConstantBuffer._CascadeShadowSplitSpheres0 = Shader.PropertyToID("_CascadeShadowSplitSpheres0");
+            MainLightShadowConstantBuffer._CascadeShadowSplitSpheres1 = Shader.PropertyToID("_CascadeShadowSplitSpheres1");
+            MainLightShadowConstantBuffer._CascadeShadowSplitSpheres2 = Shader.PropertyToID("_CascadeShadowSplitSpheres2");
+            MainLightShadowConstantBuffer._CascadeShadowSplitSpheres3 = Shader.PropertyToID("_CascadeShadowSplitSpheres3");
+            MainLightShadowConstantBuffer._CascadeShadowSplitSphereRadii = Shader.PropertyToID("_CascadeShadowSplitSphereRadii");
 
             m_MainLightShadowmap.Init("_MainLightShadowmapTexture");
         }
@@ -224,6 +234,23 @@ namespace UnityEngine.Rendering.Custom.Internal
             //当渲染完阴影后，调用buffer.SetGlobalMatrixArray方法将转换矩阵发送到GPU。
             cmd.SetGlobalMatrixArray(MainLightShadowConstantBuffer._WorldToShadow, m_MainLightShadowMatrices);
             cmd.SetGlobalVector(MainLightShadowConstantBuffer._ShadowParams, new Vector4(light.shadowStrength, softShadowsProp, oneOverFadeDist, minusStartFade));
+
+            if (m_ShadowCasterCascadesCount > 1)
+            {
+                cmd.SetGlobalVector(MainLightShadowConstantBuffer._CascadeShadowSplitSpheres0,
+                    m_CascadeSplitDistances[0]);
+                cmd.SetGlobalVector(MainLightShadowConstantBuffer._CascadeShadowSplitSpheres1,
+                    m_CascadeSplitDistances[1]);
+                cmd.SetGlobalVector(MainLightShadowConstantBuffer._CascadeShadowSplitSpheres2,
+                    m_CascadeSplitDistances[2]);
+                cmd.SetGlobalVector(MainLightShadowConstantBuffer._CascadeShadowSplitSpheres3,
+                    m_CascadeSplitDistances[3]);
+                cmd.SetGlobalVector(MainLightShadowConstantBuffer._CascadeShadowSplitSphereRadii, new Vector4(
+                    m_CascadeSplitDistances[0].w * m_CascadeSplitDistances[0].w,
+                    m_CascadeSplitDistances[1].w * m_CascadeSplitDistances[1].w,
+                    m_CascadeSplitDistances[2].w * m_CascadeSplitDistances[2].w,
+                    m_CascadeSplitDistances[3].w * m_CascadeSplitDistances[3].w));
+            }
         }
     };
 }
