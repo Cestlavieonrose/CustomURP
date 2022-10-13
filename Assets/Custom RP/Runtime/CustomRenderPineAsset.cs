@@ -385,7 +385,7 @@ namespace UnityEngine.Rendering.Custom
         {
             get { return (int)m_MainLightShadowmapResolution; }
         }
-
+        //最后一级会覆盖整个区域，所以不用自己调节
         /// <summary>
         /// Returns the split value.
         /// </summary>

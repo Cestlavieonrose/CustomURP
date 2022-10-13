@@ -34,6 +34,7 @@ namespace UnityEngine.Rendering.Custom.Internal
         Matrix4x4 viewMatrix; 
         Matrix4x4 projectionMatrix;
         ShadowSliceData[] m_CascadeSlices;
+        Vector4[] m_CascadeSplitDistances;
         Matrix4x4[] m_MainLightShadowMatrices;
 
         const int k_MaxCascades = 4;
@@ -46,6 +47,7 @@ namespace UnityEngine.Rendering.Custom.Internal
 
             m_MainLightShadowMatrices = new Matrix4x4[k_MaxCascades + 1];
             m_CascadeSlices = new ShadowSliceData[k_MaxCascades];
+            m_CascadeSplitDistances = new Vector4[k_MaxCascades];
 
             MainLightShadowConstantBuffer._WorldToShadow = Shader.PropertyToID("_MainLightWorldToShadow");
             MainLightShadowConstantBuffer._ShadowParams = Shader.PropertyToID("_MainLightShadowParams");
@@ -85,7 +87,10 @@ namespace UnityEngine.Rendering.Custom.Internal
             int shadowResolution = ShadowUtils.GetMaxTileResolutionInAtlas(renderingData.shadowData.mainLightShadowmapWidth,
                 renderingData.shadowData.mainLightShadowmapHeight, m_ShadowCasterCascadesCount);
             m_ShadowmapWidth = renderingData.shadowData.mainLightShadowmapWidth;
-            m_ShadowmapHeight = renderingData.shadowData.mainLightShadowmapHeight;
+            m_ShadowmapHeight = (m_ShadowCasterCascadesCount == 2) ?
+                renderingData.shadowData.mainLightShadowmapHeight >> 1 :
+                renderingData.shadowData.mainLightShadowmapHeight;
+
 //阴影贴图本质也是一张深度图，它记录了从光源位置出发，到能看到的场景中距离它最近的表面位置（深度信息）。
 //但是方向光并没有一个真实位置，我们要做地是找出与光的方向匹配的视图和投影矩阵，并给我们一个裁剪空间的立方体，
 //该立方体与包含光源阴影的摄影机的可见区域重叠，这些数据的获取我们不用自己去实现，
@@ -93,13 +98,15 @@ namespace UnityEngine.Rendering.Custom.Internal
 //它需要9个参数。第1个是可见光的索引，第2、3、4个参数用于设置阴影级联数据，后面我们会处理它，第5个参数是阴影贴图的尺寸，
 //第6个参数是阴影近平面偏移，我们先忽略它。最后三个参数都是输出参数，一个是视图矩阵，一个是投影矩阵，一个是ShadowSplitData对象，
 //它描述有关给定阴影分割（如定向级联）的剔除信息。
-           bool success = ShadowUtils.ExtractDirectionalLightMatrix(ref renderingData.cullResults, ref renderingData.shadowData,
-                    shadowLightIndex, 0, m_ShadowmapWidth, m_ShadowmapHeight, shadowResolution, light.shadowNearPlane,
-                    out m_CascadeSlices[0], out viewMatrix, out projectionMatrix);
+            for (int cascadeIndex = 0; cascadeIndex < m_ShadowCasterCascadesCount; ++cascadeIndex)
+            {
+                bool success = ShadowUtils.ExtractDirectionalLightMatrix(ref renderingData.cullResults, ref renderingData.shadowData,
+                    shadowLightIndex, cascadeIndex, m_ShadowmapWidth, m_ShadowmapHeight, shadowResolution, light.shadowNearPlane,
+                    out m_CascadeSplitDistances[cascadeIndex], out m_CascadeSlices[cascadeIndex], out m_CascadeSlices[cascadeIndex].viewMatrix, out m_CascadeSlices[cascadeIndex].projectionMatrix);
 
-            if (!success)
-                return false;
-
+                if (!success)
+                    return false;
+            }
 
             m_MaxShadowDistance = renderingData.cameraData.maxShadowDistance * renderingData.cameraData.maxShadowDistance;
             return true;
@@ -110,6 +117,9 @@ namespace UnityEngine.Rendering.Custom.Internal
             m_MainLightShadowmapTexture = null;
             for (int i = 0; i < m_MainLightShadowMatrices.Length; ++i)
                 m_MainLightShadowMatrices[i] = Matrix4x4.identity;
+            
+            for (int i = 0; i < m_CascadeSplitDistances.Length; ++i)
+                m_CascadeSplitDistances[i] = new Vector4(0.0f, 0.0f, 0.0f, 0.0f);
 
             for (int i = 0; i < m_CascadeSlices.Length; ++i)
                 m_CascadeSlices[i].Clear();
@@ -139,10 +149,20 @@ namespace UnityEngine.Rendering.Custom.Internal
             using (new ProfilingScope(cmd, ProfilingSampler.Get(URPProfileId.MainLightShadow)))
             {
                 var settings = new ShadowDrawingSettings(cullResults, shadowLightIndex);
-                ShadowUtils.SetupShadowCasterConstantBuffer(cmd, ref shadowLight);
-                ShadowUtils.RenderShadowSlice(cmd, ref context, ref m_CascadeSlices[0],  ref settings, projectionMatrix, viewMatrix);
+
+                for (int cascadeIndex = 0; cascadeIndex < m_ShadowCasterCascadesCount; ++cascadeIndex)
+                {
+                    var splitData = settings.splitData;
+                    splitData.cullingSphere = m_CascadeSplitDistances[cascadeIndex];
+                    settings.splitData = splitData;
+                    // Vector4 shadowBias = ShadowUtils.GetShadowBias(ref shadowLight, shadowLightIndex, ref shadowData, m_CascadeSlices[cascadeIndex].projectionMatrix, m_CascadeSlices[cascadeIndex].resolution);
+                    ShadowUtils.SetupShadowCasterConstantBuffer(cmd, ref shadowLight);
+                    ShadowUtils.RenderShadowSlice(cmd, ref context, ref m_CascadeSlices[cascadeIndex],
+                        ref settings, m_CascadeSlices[cascadeIndex].projectionMatrix, m_CascadeSlices[cascadeIndex].viewMatrix);
+                }
 
                 CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.MainLightShadows, true);
+                CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.MainLightShadowCascades, shadowData.mainLightShadowCascadesCount > 1);
 
                 SetupMainLightShadowReceiverConstants(cmd, shadowLight, shadowData.supportsSoftShadows);
             }

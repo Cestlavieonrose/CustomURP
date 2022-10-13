@@ -36,29 +36,26 @@ namespace UnityEngine.Rendering.Custom
                 GraphicsSettings.HasShaderDefine(Graphics.activeTier, BuiltinShaderDefine.UNITY_METAL_SHADOWS_USE_POINT_FILTERING);
         }
 
-        public static bool ExtractDirectionalLightMatrix(ref CullingResults cullResults, ref ShadowData shadowData, 
-                                                int shadowLightIndex, int cascadeIndex, int shadowmapWidth, int shadowmapHeight, 
-                                                int shadowResolution, float shadowNearPlane, 
-                                                out ShadowSliceData shadowSliceData,
-                                                out Matrix4x4 viewMatrix, out Matrix4x4 projMatrix)
+        public static bool ExtractDirectionalLightMatrix(ref CullingResults cullResults, ref ShadowData shadowData, int shadowLightIndex, int cascadeIndex, int shadowmapWidth, int shadowmapHeight, int shadowResolution, float shadowNearPlane, out Vector4 cascadeSplitDistance, out ShadowSliceData shadowSliceData, out Matrix4x4 viewMatrix, out Matrix4x4 projMatrix)
         {
             ShadowSplitData splitData;
-            bool success = cullResults.ComputeDirectionalShadowMatricesAndCullingPrimitives(shadowLightIndex, 
-                0, 1, Vector3.zero, shadowResolution, 0f,
-     out viewMatrix, out projMatrix, out splitData);
+            bool success = cullResults.ComputeDirectionalShadowMatricesAndCullingPrimitives(shadowLightIndex,
+                cascadeIndex, shadowData.mainLightShadowCascadesCount, shadowData.mainLightShadowCascadesSplit, shadowResolution, shadowNearPlane, out viewMatrix, out projMatrix,
+                out splitData);
 
-            // cascadeSplitDistance = splitData.cullingSphere;
-            shadowSliceData.offsetX = (0 % 2) * shadowResolution;
-            shadowSliceData.offsetY = (0 / 2) * shadowResolution;
+            cascadeSplitDistance = splitData.cullingSphere;
+            shadowSliceData.offsetX = (cascadeIndex % 2) * shadowResolution;
+            shadowSliceData.offsetY = (cascadeIndex / 2) * shadowResolution;
             shadowSliceData.resolution = shadowResolution;
             shadowSliceData.viewMatrix = viewMatrix;
             shadowSliceData.projectionMatrix = projMatrix;
             shadowSliceData.shadowTransform = GetShadowTransform(projMatrix, viewMatrix);
 
-            // // If we have shadow cascades baked into the atlas we bake cascade transform
-            // // in each shadow matrix to save shader ALU and L/S
-            // if (shadowData.mainLightShadowCascadesCount > 1)
-            //     ApplySliceTransform(ref shadowSliceData, shadowmapWidth, shadowmapHeight);
+            // If we have shadow cascades baked into the atlas we bake cascade transform
+            // in each shadow matrix to save shader ALU and L/S
+            //阴影转换矩阵需要加上位移和缩放
+            if (shadowData.mainLightShadowCascadesCount > 1)
+                ApplySliceTransform(ref shadowSliceData, shadowmapWidth, shadowmapHeight);
 
             return success;
         }
@@ -75,7 +72,7 @@ namespace UnityEngine.Rendering.Custom
             ref ShadowSliceData shadowSliceData, ref ShadowDrawingSettings settings,
             Matrix4x4 proj, Matrix4x4 view)
         {
-            cmd.SetViewport(new Rect(0, 0, shadowSliceData.resolution, shadowSliceData.resolution));
+            cmd.SetViewport(new Rect(shadowSliceData.offsetX, shadowSliceData.offsetY, shadowSliceData.resolution, shadowSliceData.resolution));
             cmd.SetViewProjectionMatrices(view, proj);
             context.ExecuteCommandBuffer(cmd);
             cmd.Clear();
@@ -84,7 +81,7 @@ namespace UnityEngine.Rendering.Custom
             context.ExecuteCommandBuffer(cmd);
             cmd.Clear();
         }
-
+        //现在整个阴影图集可以分割成最多2X2=4个图块，因此调整GetMaxTileResolutionInAtlas方法中的分割图块数量和图块大小。
         public static int GetMaxTileResolutionInAtlas(int atlasWidth, int atlasHeight, int tileCount)
         {
             int resolution = Mathf.Min(atlasWidth, atlasHeight);
