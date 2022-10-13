@@ -31,8 +31,6 @@ namespace UnityEngine.Rendering.Custom.Internal
         float m_MaxShadowDistance;
         int m_ShadowCasterCascadesCount;
 
-        Matrix4x4 viewMatrix; 
-        Matrix4x4 projectionMatrix;
         ShadowSliceData[] m_CascadeSlices;
         //设置每个级联包围球数据cullingSphere，为一个vector4，前三位是球心坐标，最后一位是半径
         //但因为在渲染时，摄像机的位置朝向等属性会及时改变，所以每个层级的子视截体都会不断变换，子视截体的轴对齐包围盒也要跟着变化，
@@ -206,16 +204,16 @@ namespace UnityEngine.Rendering.Custom.Internal
             bool softShadows = shadowLight.light.shadows == LightShadows.Soft && supportsSoftShadows;
 
             int cascadeCount = m_ShadowCasterCascadesCount;
-            // for (int i = 0; i < cascadeCount; ++i)
-                m_MainLightShadowMatrices[0] = m_CascadeSlices[0].shadowTransform;
+            for (int i = 0; i < cascadeCount; ++i)
+                m_MainLightShadowMatrices[0] = m_CascadeSlices[i].shadowTransform;
 
             // We setup and additional a no-op WorldToShadow matrix in the last index
             // because the ComputeCascadeIndex function in Shadows.hlsl can return an index
             // out of bounds. (position not inside any cascade) and we want to avoid branching
-            // Matrix4x4 noOpShadowMatrix = Matrix4x4.zero;
-            // noOpShadowMatrix.m22 = (SystemInfo.usesReversedZBuffer) ? 1.0f : 0.0f;
-            // for (int i = cascadeCount; i <= k_MaxCascades; ++i)
-                // m_MainLightShadowMatrices[0] = noOpShadowMatrix;
+            Matrix4x4 noOpShadowMatrix = Matrix4x4.zero;
+            noOpShadowMatrix.m22 = (SystemInfo.usesReversedZBuffer) ? 1.0f : 0.0f;
+            for (int i = cascadeCount; i <= k_MaxCascades; ++i)
+                m_MainLightShadowMatrices[i] = noOpShadowMatrix;
 
             float invShadowAtlasWidth = 1.0f / m_ShadowmapWidth;
             float invShadowAtlasHeight = 1.0f / m_ShadowmapHeight;

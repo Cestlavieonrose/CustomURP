@@ -45,6 +45,26 @@ CBUFFER_END
 
 //108
 #define BEYOND_SHADOW_FAR(shadowCoord) shadowCoord.z <= 0.0 || shadowCoord.z >= 1.0
+//级联包围球数据结构
+struct ShadowSamplingData
+{
+    half4 shadowOffset0;
+    half4 shadowOffset1;
+    half4 shadowOffset2;
+    half4 shadowOffset3;
+    float4 shadowmapSize;
+};
+
+ShadowSamplingData GetMainLightShadowSamplingData()
+{
+    ShadowSamplingData shadowSamplingData;
+    shadowSamplingData.shadowOffset0 = _MainLightShadowOffset0;
+    shadowSamplingData.shadowOffset1 = _MainLightShadowOffset1;
+    shadowSamplingData.shadowOffset2 = _MainLightShadowOffset2;
+    shadowSamplingData.shadowOffset3 = _MainLightShadowOffset3;
+    shadowSamplingData.shadowmapSize = _MainLightShadowmapSize;
+    return shadowSamplingData;
+}
 
 //141： ShadowParams
 // x: ShadowStrength
@@ -55,11 +75,11 @@ half4 GetMainLightShadowParams()
 }
 
 //209
-real SampleShadowmap(TEXTURE2D_SHADOW_PARAM(ShadowMap, sampler_ShadowMap), float4 shadowCoord, half4 shadowParams, bool isPerspectiveProjection = true)
+real SampleShadowmap(TEXTURE2D_SHADOW_PARAM(ShadowMap, sampler_ShadowMap), float4 shadowCoord, ShadowSamplingData samplingData, half4 shadowParams, bool isPerspectiveProjection = true)
 {
-    // // Compiler will optimize this branch away as long as isPerspectiveProjection is known at compile time
-    // if (isPerspectiveProjection)
-    //     shadowCoord.xyz /= shadowCoord.w;
+    // Compiler will optimize this branch away as long as isPerspectiveProjection is known at compile time
+    if (isPerspectiveProjection)
+        shadowCoord.xyz /= shadowCoord.w;
 
     real attenuation;
     real shadowStrength = shadowParams.x;
@@ -73,11 +93,11 @@ real SampleShadowmap(TEXTURE2D_SHADOW_PARAM(ShadowMap, sampler_ShadowMap), float
 // #endif
 
     // attenuation = LerpWhiteTo(attenuation, shadowStrength);
-    attenuation = lerp(1.0, attenuation, shadowStrength);
+    attenuation = LerpWhiteTo(attenuation, shadowStrength);
 
     // Shadow coords that fall out of the light frustum volume must always return attenuation 1.0
     // TODO: We could use branch here to save some perf on some platforms.
-    return attenuation;//BEYOND_SHADOW_FAR(shadowCoord) ? 1.0 : attenuation;
+    return BEYOND_SHADOW_FAR(shadowCoord) ? 1.0 : attenuation;
 }
 
 //233:判断该点在哪个CascadeIndex包围球，这个算法不严格，但是毕竟会选出一个合适正确的index
@@ -115,8 +135,9 @@ half MainLightRealtimeShadow(float4 shadowCoord)
 #if !defined(MAIN_LIGHT_CALCULATE_SHADOWS)
     return 1.0h;
 #endif
+    ShadowSamplingData shadowSamplingData = GetMainLightShadowSamplingData();
     half4 shadowParams = GetMainLightShadowParams();
-    return SampleShadowmap(TEXTURE2D_ARGS(_MainLightShadowmapTexture, sampler_MainLightShadowmapTexture), shadowCoord, shadowParams, false);
+    return SampleShadowmap(TEXTURE2D_ARGS(_MainLightShadowmapTexture, sampler_MainLightShadowmapTexture), shadowCoord, shadowSamplingData, shadowParams, false);
 }
 
 half MixRealtimeAndBakedShadows(half realtimeShadow, half bakedShadow, half shadowFade)
