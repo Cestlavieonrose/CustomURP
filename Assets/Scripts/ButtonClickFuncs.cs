@@ -9,10 +9,10 @@ public class ButtonClickFuncs : MonoBehaviour
     {
         togglebtn = !togglebtn;
         if (togglebtn)
-            Shader.EnableKeyword("_CLIPPING");
+            Shader.EnableKeyword("_ALPHATEST_ON");
         else
         {
-            Shader.DisableKeyword("_CLIPPING");    
+            Shader.DisableKeyword("_ALPHATEST_ON");    
         }
         
     }

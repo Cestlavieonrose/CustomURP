@@ -177,7 +177,7 @@ inline void InitializeBRDFDataDirect(half3 diffuse, half3 specular, half smoothn
 
 #ifdef _ALPHAPREMULTIPLY_ON
     outBRDFData.diffuse *= alpha;
-    // alpha = alpha * oneMinusReflectivity + reflectivity; // NOTE: alpha modified and propagated up.
+    alpha = alpha * oneMinusReflectivity + reflectivity; // NOTE: alpha modified and propagated up.
 #endif
 }
 
@@ -276,7 +276,7 @@ half3 LightingPhysicallyBased(BRDFData brdfData, Light light, half3 normalWS, ha
 //       Used by ShaderGraph and others builtin renderers                    //
 ///////////////////////////////////////////////////////////////////////////////
 //根据物体的表面信息获取最终的光照结果
-half3 UniversalFragmentPBR(InputData inputData, SurfaceData surfaceData)
+half4 UniversalFragmentPBR(InputData inputData, SurfaceData surfaceData)
 {
 #ifdef _SPECULARHIGHLIGHTS_OFF
     bool specularHighlightsOff = true;
@@ -300,6 +300,6 @@ half3 UniversalFragmentPBR(InputData inputData, SurfaceData surfaceData)
         color += GetLighting(surfaceData, brdfData, light);
     }
 #endif
-    return color;
+    return half4(color, surfaceData.alpha);
 }
 #endif

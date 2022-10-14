@@ -41,4 +41,9 @@ float3 GetWorldSpaceViewDir(float3 positionWS)
 }
 
 
+half OutputAlpha(half outputAlpha, half surfaceType)
+{
+    return surfaceType == 1 ? outputAlpha : 1.0;
+}
+
 #endif // UNITY_SHADER_VARIABLES_FUNCTIONS_INCLUDED

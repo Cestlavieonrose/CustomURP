@@ -66,14 +66,14 @@ Varyings LitPassVertex(Attributes input)
 }
 
 //片元函数
-float4 LitPassFragment(Varyings input):SV_Target
+half4 LitPassFragment(Varyings input):SV_Target
 {
     UNITY_SETUP_INSTANCE_ID(input);
 
     float4 baseMap = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.baseUV);
     float4 baseColor = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseColor);
     float4 base = baseMap*baseColor;
-    #if defined(_CLIPPING)
+    #if defined(_ALPHATEST_ON)
         clip(base.a - UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Cutoff));
     #endif
 
@@ -88,8 +88,9 @@ float4 LitPassFragment(Varyings input):SV_Target
     InputData inputData;
     InitializeInputData(input, inputData);
     //通过表面属性计算最终光照结果
-    float3 color = UniversalFragmentPBR(inputData, surface);
-    return float4(color, surface.alpha);
+    half4 color = UniversalFragmentPBR(inputData, surface);
+    color.a = OutputAlpha(color.a, 1);
+    return color;
 }
 
 #endif

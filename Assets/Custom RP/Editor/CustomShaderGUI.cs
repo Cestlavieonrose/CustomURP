@@ -61,7 +61,12 @@ public class CustomShaderGUI : ShaderGUI
 
     bool Clipping
     {
-        set => SetProperty("_Clipping", "_CLIPPING", value);
+        set => SetProperty("_Clipping", "_ALPHATEST_ON", value);
+    }
+
+    float SurfaceType
+    {
+        set => SetProperty("_Surface", value);
     }
 
     bool PremultiplyAlpha 

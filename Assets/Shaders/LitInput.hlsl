@@ -3,7 +3,7 @@
 
 #include "Universal/ShaderLibrary/Core.hlsl"
 #include "Core/ShaderLibrary/CommonMaterial.hlsl"
-#include "Universal/ShaderLibrary/SurfaceData.hlsl"
+#include "Universal/ShaderLibrary/SurfaceInput.hlsl"
 
 //所有材质的属性我们需要在常量区缓冲区里定义
 //并非所有的平台都支持常量缓冲区，可以使用CBUFFER_START/CBUFFER_END带代替cbuffer，这样补支持常量的缓冲区平台就会忽略掉这个cbuff
@@ -22,9 +22,8 @@ UNITY_DEFINE_INSTANCED_PROP(float, _Cutoff)
 
 UNITY_DEFINE_INSTANCED_PROP(half, _Metallic)
 UNITY_DEFINE_INSTANCED_PROP(half, _Smoothness)
+UNITY_DEFINE_INSTANCED_PROP(half, _Surface)
 UNITY_INSTANCING_BUFFER_END(UnityPerMaterial)
-
-TEXTURE2D(_BaseMap);                    SAMPLER(sampler_BaseMap);
 
 #endif
 

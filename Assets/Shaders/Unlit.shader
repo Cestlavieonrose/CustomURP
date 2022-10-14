@@ -6,7 +6,7 @@ Shader "CustomRP/Unlit"
         _BaseMap("Texture", 2D) = "white" {}
         //透明度测试的阈值
         _Cutoff("Alpha Cutoff", Range(0.0, 1.0)) = 0.5
-        [Toggle(_CLIPPING)] _Clipping("Alpha Clipping", Float) = 0
+        [Toggle(_ALPHATEST_ON)] _Clipping("Alpha Clipping", Float) = 0
         //设置混合模式
         [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend ("Sec Blend", Float) = 1
         [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend ("Dst Blend", Float) = 0
@@ -22,7 +22,7 @@ Shader "CustomRP/Unlit"
             //是否写入深度
             ZWrite[_ZWrite]
             HLSLPROGRAM
-            #pragma shader_feature _CLIPPING
+            #pragma shader_feature _ALPHATEST_ON
             #pragma multi_compile_instancing
             #pragma vertex UnlitPassVertex
             #pragma fragment UnlitPassFragment
