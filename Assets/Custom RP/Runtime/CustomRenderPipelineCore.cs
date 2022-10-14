@@ -151,7 +151,7 @@ namespace UnityEngine.Rendering.Custom
         public int additionalLightsShadowmapHeight;
         public bool supportsSoftShadows;
         public int shadowmapDepthBufferBits;
-        public List<Vector4> bias;
+        public List<Vector4> bias;//x y  light组件中的bias 和 normal bias
     }
 
     internal static class ShaderPropertyId
@@ -210,7 +210,7 @@ namespace UnityEngine.Rendering.Custom
         public static readonly string AdditionalLightsVertex = "_ADDITIONAL_LIGHTS_VERTEX";
         public static readonly string AdditionalLightsPixel = "_ADDITIONAL_LIGHTS";
         public static readonly string AdditionalLightShadows = "_ADDITIONAL_LIGHT_SHADOWS";
-        public static readonly string SoftShadows = "_SHADOWS_SOFT";
+        public static readonly string SoftShadows = "_SHADOWS_SOFT";//hadowLight.light.shadows == LightShadows.Soft && shadowData.supportsSoftShadows;
         public static readonly string MixedLightingSubtractive = "_MIXED_LIGHTING_SUBTRACTIVE"; // Backward compatibility
         public static readonly string LightmapShadowMixing = "LIGHTMAP_SHADOW_MIXING";
         public static readonly string ShadowsShadowMask = "SHADOWS_SHADOWMASK";

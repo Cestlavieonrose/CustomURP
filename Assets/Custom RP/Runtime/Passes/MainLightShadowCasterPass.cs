@@ -16,11 +16,11 @@ namespace UnityEngine.Rendering.Custom.Internal
             public static int _CascadeShadowSplitSpheres2;
             public static int _CascadeShadowSplitSpheres3;
             public static int _CascadeShadowSplitSphereRadii;//我们后续需要在着色器中判断物体表面的片元是否在包围球中，可以通过该片元到球心距离的平方和球体半径的平方来比较，我们传递数据之前先计算好球体半径的平方，就不用再在着色器中计算了。
-            // public static int _ShadowOffset0;
-            // public static int _ShadowOffset1;
-            // public static int _ShadowOffset2;
-            // public static int _ShadowOffset3;
-            // public static int _ShadowmapSize;
+            public static int _ShadowOffset0;
+            public static int _ShadowOffset1;
+            public static int _ShadowOffset2;
+            public static int _ShadowOffset3;
+            public static int _ShadowmapSize;
         }
         //shadow贴图的位数
         const int k_ShadowmapBufferBits = 16;
@@ -39,8 +39,10 @@ namespace UnityEngine.Rendering.Custom.Internal
         //光的方向和球无关，所以我们所有的方向光都使用相同的包围球。
         Vector4[] m_CascadeSplitDistances;
         Matrix4x4[] m_MainLightShadowMatrices;
+        bool m_SupportsBoxFilterForShadows;
 
         const int k_MaxCascades = 4;
+        
         ProfilingSampler m_ProfilingSetupSampler = new ProfilingSampler("Setup Main Shadowmap");
 
         public MainLightShadowCasterPass(RenderPassEvent evt)
@@ -59,8 +61,15 @@ namespace UnityEngine.Rendering.Custom.Internal
             MainLightShadowConstantBuffer._CascadeShadowSplitSpheres2 = Shader.PropertyToID("_CascadeShadowSplitSpheres2");
             MainLightShadowConstantBuffer._CascadeShadowSplitSpheres3 = Shader.PropertyToID("_CascadeShadowSplitSpheres3");
             MainLightShadowConstantBuffer._CascadeShadowSplitSphereRadii = Shader.PropertyToID("_CascadeShadowSplitSphereRadii");
+            MainLightShadowConstantBuffer._ShadowOffset0 = Shader.PropertyToID("_MainLightShadowOffset0");
+            MainLightShadowConstantBuffer._ShadowOffset1 = Shader.PropertyToID("_MainLightShadowOffset1");
+            MainLightShadowConstantBuffer._ShadowOffset2 = Shader.PropertyToID("_MainLightShadowOffset2");
+            MainLightShadowConstantBuffer._ShadowOffset3 = Shader.PropertyToID("_MainLightShadowOffset3");
+            MainLightShadowConstantBuffer._ShadowmapSize = Shader.PropertyToID("_MainLightShadowmapSize");
 
             m_MainLightShadowmap.Init("_MainLightShadowmapTexture");
+
+            m_SupportsBoxFilterForShadows = Application.isMobilePlatform || SystemInfo.graphicsDeviceType == GraphicsDeviceType.Switch;
         }
 
         public bool Setup(ref RenderingData renderingData)
@@ -169,9 +178,10 @@ namespace UnityEngine.Rendering.Custom.Internal
                     ShadowUtils.RenderShadowSlice(cmd, ref context, ref m_CascadeSlices[cascadeIndex],
                         ref settings, m_CascadeSlices[cascadeIndex].projectionMatrix, m_CascadeSlices[cascadeIndex].viewMatrix);
                 }
-
+                bool softShadows = shadowLight.light.shadows == LightShadows.Soft && shadowData.supportsSoftShadows;
                 CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.MainLightShadows, true);
                 CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.MainLightShadowCascades, shadowData.mainLightShadowCascadesCount > 1);
+                CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.SoftShadows, softShadows);
 
                 SetupMainLightShadowReceiverConstants(cmd, shadowLight, shadowData.supportsSoftShadows);
             }
@@ -249,6 +259,31 @@ namespace UnityEngine.Rendering.Custom.Internal
                     m_CascadeSplitDistances[1].w * m_CascadeSplitDistances[1].w,
                     m_CascadeSplitDistances[2].w * m_CascadeSplitDistances[2].w,
                     m_CascadeSplitDistances[3].w * m_CascadeSplitDistances[3].w));
+            }
+
+            // Inside shader soft shadows are controlled through global keyword.
+            // If any additional light has soft shadows it will force soft shadows on main light too.
+            // As it is not trivial finding out which additional light has soft shadows, we will pass main light properties if soft shadows are supported.
+            // This workaround will be removed once we will support soft shadows per light.
+            if (supportsSoftShadows)
+            {
+                if (m_SupportsBoxFilterForShadows)
+                {
+                    cmd.SetGlobalVector(MainLightShadowConstantBuffer._ShadowOffset0,
+                        new Vector4(-invHalfShadowAtlasWidth, -invHalfShadowAtlasHeight, 0.0f, 0.0f));
+                    cmd.SetGlobalVector(MainLightShadowConstantBuffer._ShadowOffset1,
+                        new Vector4(invHalfShadowAtlasWidth, -invHalfShadowAtlasHeight, 0.0f, 0.0f));
+                    cmd.SetGlobalVector(MainLightShadowConstantBuffer._ShadowOffset2,
+                        new Vector4(-invHalfShadowAtlasWidth, invHalfShadowAtlasHeight, 0.0f, 0.0f));
+                    cmd.SetGlobalVector(MainLightShadowConstantBuffer._ShadowOffset3,
+                        new Vector4(invHalfShadowAtlasWidth, invHalfShadowAtlasHeight, 0.0f, 0.0f));
+                }
+
+                // Currently only used when !SHADER_API_MOBILE but risky to not set them as it's generic
+                // enough so custom shaders might use it.
+                cmd.SetGlobalVector(MainLightShadowConstantBuffer._ShadowmapSize, new Vector4(invShadowAtlasWidth,
+                    invShadowAtlasHeight,
+                    m_ShadowmapWidth, m_ShadowmapHeight));
             }
         }
     };

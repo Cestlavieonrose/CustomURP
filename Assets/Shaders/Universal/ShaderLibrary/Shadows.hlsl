@@ -2,6 +2,7 @@
 #define UNIVERSAL_SHADOWS_INCLUDED
 
 #include "../../Core/ShaderLibrary/Common.hlsl"
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Shadow/ShadowSamplingTent.hlsl"
 #include "Core.hlsl"
 
 #define MAX_SHADOW_CASCADES 4
@@ -32,7 +33,7 @@ float4      _CascadeShadowSplitSpheres1;
 float4      _CascadeShadowSplitSpheres2;
 float4      _CascadeShadowSplitSpheres3;
 float4      _CascadeShadowSplitSphereRadii;//每个包围球半径的平方
-half4       _MainLightShadowOffset0;
+half4       _MainLightShadowOffset0; //实现box softshadow
 half4       _MainLightShadowOffset1;
 half4       _MainLightShadowOffset2;
 half4       _MainLightShadowOffset3;
@@ -42,6 +43,7 @@ float4      _MainLightShadowmapSize; // (xy: 1/width and 1/height, zw: width and
 CBUFFER_END
 #endif
 
+float4 _ShadowBias; // x: depth bias, y: normal bias
 
 //108
 #define BEYOND_SHADOW_FAR(shadowCoord) shadowCoord.z <= 0.0 || shadowCoord.z >= 1.0
@@ -54,7 +56,7 @@ struct ShadowSamplingData
     half4 shadowOffset3;
     float4 shadowmapSize;
 };
-
+//box 软阴影数据结构
 ShadowSamplingData GetMainLightShadowSamplingData()
 {
     ShadowSamplingData shadowSamplingData;
@@ -73,6 +75,37 @@ half4 GetMainLightShadowParams()
 {
     return _MainLightShadowParams;
 }
+//178:box 软阴影算法  片段阴影坐标点周围0.5个shadowmap分辨率单位各采集一次 然后算平均值
+real SampleShadowmapFiltered(TEXTURE2D_SHADOW_PARAM(ShadowMap, sampler_ShadowMap), float4 shadowCoord, ShadowSamplingData samplingData)
+{
+    real attenuation;
+
+#if defined(SHADER_API_MOBILE) || defined(SHADER_API_SWITCH)
+    // 4-tap hardware comparison
+    real4 attenuation4;
+    attenuation4.x = SAMPLE_TEXTURE2D_SHADOW(ShadowMap, sampler_ShadowMap, shadowCoord.xyz + samplingData.shadowOffset0.xyz);
+    attenuation4.y = SAMPLE_TEXTURE2D_SHADOW(ShadowMap, sampler_ShadowMap, shadowCoord.xyz + samplingData.shadowOffset1.xyz);
+    attenuation4.z = SAMPLE_TEXTURE2D_SHADOW(ShadowMap, sampler_ShadowMap, shadowCoord.xyz + samplingData.shadowOffset2.xyz);
+    attenuation4.w = SAMPLE_TEXTURE2D_SHADOW(ShadowMap, sampler_ShadowMap, shadowCoord.xyz + samplingData.shadowOffset3.xyz);
+    attenuation = dot(attenuation4, 0.25);
+#else
+    float fetchesWeights[9];
+    float2 fetchesUV[9];
+    SampleShadow_ComputeSamples_Tent_5x5(samplingData.shadowmapSize, shadowCoord.xy, fetchesWeights, fetchesUV);
+
+    attenuation = fetchesWeights[0] * SAMPLE_TEXTURE2D_SHADOW(ShadowMap, sampler_ShadowMap, float3(fetchesUV[0].xy, shadowCoord.z));
+    attenuation += fetchesWeights[1] * SAMPLE_TEXTURE2D_SHADOW(ShadowMap, sampler_ShadowMap, float3(fetchesUV[1].xy, shadowCoord.z));
+    attenuation += fetchesWeights[2] * SAMPLE_TEXTURE2D_SHADOW(ShadowMap, sampler_ShadowMap, float3(fetchesUV[2].xy, shadowCoord.z));
+    attenuation += fetchesWeights[3] * SAMPLE_TEXTURE2D_SHADOW(ShadowMap, sampler_ShadowMap, float3(fetchesUV[3].xy, shadowCoord.z));
+    attenuation += fetchesWeights[4] * SAMPLE_TEXTURE2D_SHADOW(ShadowMap, sampler_ShadowMap, float3(fetchesUV[4].xy, shadowCoord.z));
+    attenuation += fetchesWeights[5] * SAMPLE_TEXTURE2D_SHADOW(ShadowMap, sampler_ShadowMap, float3(fetchesUV[5].xy, shadowCoord.z));
+    attenuation += fetchesWeights[6] * SAMPLE_TEXTURE2D_SHADOW(ShadowMap, sampler_ShadowMap, float3(fetchesUV[6].xy, shadowCoord.z));
+    attenuation += fetchesWeights[7] * SAMPLE_TEXTURE2D_SHADOW(ShadowMap, sampler_ShadowMap, float3(fetchesUV[7].xy, shadowCoord.z));
+    attenuation += fetchesWeights[8] * SAMPLE_TEXTURE2D_SHADOW(ShadowMap, sampler_ShadowMap, float3(fetchesUV[8].xy, shadowCoord.z));
+#endif
+
+    return attenuation;
+}
 
 //209
 real SampleShadowmap(TEXTURE2D_SHADOW_PARAM(ShadowMap, sampler_ShadowMap), float4 shadowCoord, ShadowSamplingData samplingData, half4 shadowParams, bool isPerspectiveProjection = true)
@@ -84,13 +117,13 @@ real SampleShadowmap(TEXTURE2D_SHADOW_PARAM(ShadowMap, sampler_ShadowMap), float
     real attenuation;
     real shadowStrength = shadowParams.x;
 
-//     // TODO: We could branch on if this light has soft shadows (shadowParams.y) to save perf on some platforms.
-// #ifdef _SHADOWS_SOFT
-//     attenuation = SampleShadowmapFiltered(TEXTURE2D_SHADOW_ARGS(ShadowMap, sampler_ShadowMap), shadowCoord, samplingData);
-// #else
+    // TODO: We could branch on if this light has soft shadows (shadowParams.y) to save perf on some platforms.
+#ifdef _SHADOWS_SOFT
+    attenuation = SampleShadowmapFiltered(TEXTURE2D_SHADOW_ARGS(ShadowMap, sampler_ShadowMap), shadowCoord, samplingData);
+#else
     // 1-tap hardware comparison
     attenuation = SAMPLE_TEXTURE2D_SHADOW(ShadowMap, sampler_ShadowMap, shadowCoord.xyz);
-// #endif
+#endif
 
     // attenuation = LerpWhiteTo(attenuation, shadowStrength);
     attenuation = LerpWhiteTo(attenuation, shadowStrength);
@@ -174,12 +207,13 @@ float4 GetShadowCoord(float3 positionWS)
 //375
 float3 ApplyShadowBias(float3 positionWS, float3 normalWS, float3 lightDirection)
 {
-    // float invNdotL = 1.0 - saturate(dot(lightDirection, normalWS));
-    // float scale = invNdotL * _ShadowBias.y;
+    //既然无法调整深度偏差来达到我们想要的效果，那我们尝试另外一个方法，即尝试在采样阴影时使表面沿法线方向偏移一点，然后对表面的一点进行采样，如果距离足够远就可以避免阴影痤疮，这虽然会让阴影的位置发生稍微的改变，可能导致边缘不对齐或添加假阴影，但这些改变远没有影物飘离（Peter Panning）来的明显。
+    float invNdotL = 1.0 - saturate(dot(lightDirection, normalWS));
+    float scale = invNdotL * _ShadowBias.y;
 
-    // // normal bias is negative since we want to apply an inset normal offset
-    // positionWS = lightDirection * _ShadowBias.xxx + positionWS;
-    // positionWS = normalWS * scale.xxx + positionWS;
+    // normal bias is negative since we want to apply an inset normal offset
+    positionWS = lightDirection * _ShadowBias.xxx + positionWS;
+    positionWS = normalWS * scale.xxx + positionWS;
     return positionWS;
 }
 

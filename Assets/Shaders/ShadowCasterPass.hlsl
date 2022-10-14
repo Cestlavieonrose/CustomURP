@@ -2,7 +2,7 @@
 #define CUSTOM_SHADOW_CASTER_PASS_INCLUDED
 
 #include "Universal/ShaderLibrary/Core.hlsl"
-// #include "Universal/ShaderLibrary/Shadows.hlsl"
+#include "Universal/ShaderLibrary/Shadows.hlsl"
 
 
 float3 _LightDirection;
@@ -26,9 +26,8 @@ float4 GetShadowPositionHClip(Attributes input)
 {
     float3 positionWS = TransformObjectToWorld(input.positionOS.xyz);
     float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
-
-    // float4 positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, _LightDirection));
-    float4 positionCS = TransformWorldToHClip(positionWS);
+    //投射阴影的时候加入一些深度和法线偏差
+    float4 positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, _LightDirection));
 
 #if UNITY_REVERSED_Z
     positionCS.z = min(positionCS.z, positionCS.w * UNITY_NEAR_CLIP_VALUE);
