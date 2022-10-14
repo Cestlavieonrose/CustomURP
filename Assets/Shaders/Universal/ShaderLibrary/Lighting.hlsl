@@ -162,10 +162,11 @@ half OneMinusReflectivityMetallic(half metallic)
     return oneMinusDielectricSpec - metallic * oneMinusDielectricSpec;
 }
 
-inline void InitializeBRDFDataDirect(half3 diffuse, half3 specular, half smoothness, inout half alpha, out BRDFData outBRDFData)
+inline void InitializeBRDFDataDirect(half3 diffuse, half3 specular, half reflectivity, half oneMinusReflectivity, half smoothness, inout half alpha, out BRDFData outBRDFData)
 {
     outBRDFData.diffuse = diffuse;
     outBRDFData.specular = specular;
+    // outBRDFData.reflectivity = reflectivity;
     //粗糙度和光滑度相反，只需要使用1减去光滑度即可。
     //我们使用源码库中CommonMaterial.hlsl的PerceptualSmoothnessToPerceptualRoughness方法，
     //通过感知到的光滑度得到粗糙度，然后通过PerceptualRoughnessToRoughness方法将感知到的粗糙度平方，
@@ -189,12 +190,13 @@ inline void InitializeBRDFData(half3 albedo, half metallic, half smoothness, ino
     //达到最大时就完全反射显示了周围的环境景象。
     //我们调整BRDF的GetBRDF方法，用1减去金属度得到的不反射的值，然后跟表面颜色相乘得到BRDF的漫反射部分
     half oneMinusReflectivity = OneMinusReflectivityMetallic(metallic);
+    half reflectivity = 1.0 - oneMinusReflectivity;
     half3 brdfDiffuse = albedo * oneMinusReflectivity;
     //但这忽略了一个事实，即金属影响镜面反射的颜色，而非金属不影响。
     //非金属的镜面反射应该是白色的，最后我们通过金属度在最小反射率和表面颜色之间进行插值得到BRDF的镜面反射颜色。
     half3 brdfSpecular = lerp(kDielectricSpec.rgb, albedo, metallic);
 
-    InitializeBRDFDataDirect(brdfDiffuse, brdfSpecular, smoothness, alpha, outBRDFData);
+    InitializeBRDFDataDirect(brdfDiffuse, brdfSpecular, reflectivity, oneMinusReflectivity, smoothness, alpha, outBRDFData);
 }
 
 
