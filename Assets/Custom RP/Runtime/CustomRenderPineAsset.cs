@@ -44,6 +44,13 @@ namespace UnityEngine.Rendering.Custom
         _8x = 8
     }
 
+    public enum ShaderVariantLogLevel
+    {
+        Disabled,
+        OnlyUniversalRPShaders,
+        AllShaders,
+    }
+
     [ExcludeFromPreset]
     public class CustomRenderPineAsset : RenderPipelineAsset
     {
@@ -88,6 +95,8 @@ namespace UnityEngine.Rendering.Custom
         // Post-processing settings
         [SerializeField] ColorGradingMode m_ColorGradingMode = ColorGradingMode.LowDynamicRange;
         [SerializeField] int m_ColorGradingLutSize = 32;
+
+        [SerializeField] ShaderVariantLogLevel m_ShaderVariantLogLevel = ShaderVariantLogLevel.Disabled;
 
         // Note: A lut size of 16^3 is barely usable with the HDR grading mode. 32 should be the
         // minimum, the lut being encoded in log. Lower sizes would work better with an additional
@@ -331,6 +340,12 @@ namespace UnityEngine.Rendering.Custom
         public bool supportsMixedLighting
         {
             get { return m_MixedLightingSupported; }
+        }
+        //编译的时候打印被剔除的变体数量
+        public ShaderVariantLogLevel shaderVariantLogLevel
+        {
+            get { return m_ShaderVariantLogLevel; }
+            set { m_ShaderVariantLogLevel = value; }
         }
 
         ///570:阴影最大距离 <summary>
