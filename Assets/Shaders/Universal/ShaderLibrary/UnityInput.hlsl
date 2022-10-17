@@ -27,12 +27,18 @@ real4 unity_WorldTransformParams; //107
 // These are set internally by the engine upon request by RendererConfiguration.
 real4 unity_LightData;
 real4 unity_LightIndices[2];
+
+// Lightmap block feature
+float4 unity_LightmapST;//120:lightmap开启下，对于每一个渲染对象在lightmap中的位置，xy  缩放  zw 偏移
 CBUFFER_END//133
 
 float4x4 unity_MatrixV; //192
 //定义一个从世界空间转换到裁剪空间的矩阵
 float4x4 unity_MatrixVP;//195
 
+//209： Main lightmap
+TEXTURE2D(unity_Lightmap);//lightmap贴图
+SAMPLER(samplerunity_Lightmap);
 
 #endif // UNIVERSAL_SHADER_VARIABLES_INCLUDED
 

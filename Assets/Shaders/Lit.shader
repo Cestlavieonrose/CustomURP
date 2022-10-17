@@ -33,7 +33,7 @@ Shader "CustomRP/Lit"
             ZWrite[_ZWrite]
             HLSLPROGRAM
             //renderdoc debugger
-            // #pragma enable_d3d11_debug_symbols
+            #pragma enable_d3d11_debug_symbols
 
             //在Pass中将着色器编译目标级别设置为3.5，该级别越高，允许使用现代GPU的功能越多。
             //如果不设置，Unity默认将着色器编译目标级别设为2.5，介于DirectX着色器模型2.0和3.0之间。
@@ -50,6 +50,8 @@ Shader "CustomRP/Lit"
             #pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF //PBR是否忽略高光部分的计算
             #pragma shader_feature_local _RECEIVE_SHADOWS_OFF //材质是否开启接受光照
 
+            // Unity defined keywords
+            #pragma multi_compile _ LIGHTMAP_ON
             
             #pragma multi_compile_instancing
             #pragma vertex LitPassVertex
@@ -70,11 +72,14 @@ Shader "CustomRP/Lit"
             HLSLPROGRAM
             #pragma target 3.5
             //renderdoc debugger
-            // #pragma enable_d3d11_debug_symbols
+            #pragma enable_d3d11_debug_symbols
 
             // Material Keywords
             #pragma shader_feature_local_fragment _ALPHATEST_ON
 
+
+
+            //gpu instancing
             #pragma multi_compile_instancing
             #pragma vertex ShadowCasterPassVertex
             #pragma fragment ShadowCasterPassFragment

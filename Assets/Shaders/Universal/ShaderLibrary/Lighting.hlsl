@@ -3,9 +3,21 @@
 
 #include "../../Core/ShaderLibrary/Common.hlsl"
 #include "../../Core/ShaderLibrary/CommonMaterial.hlsl"
+#include "../../Core/ShaderLibrary/EntityLighting.hlsl"
 #include "Core.hlsl"
 #include "SurfaceData.hlsl"
 #include "Shadows.hlsl"
+
+#ifdef LIGHTMAP_ON
+    #define DECLARE_LIGHTMAP_OR_SH(lmName, shName, index) float2 lmName : TEXCOORD##index
+    //传递lightmap uv给varying结构
+    #define OUTPUT_LIGHTMAP_UV(lightmapUV, lightmapScaleOffset, OUT) OUT.xy = lightmapUV.xy * lightmapScaleOffset.xy + lightmapScaleOffset.zw;
+    #define OUTPUT_SH(normalWS, OUT)
+#else
+    #define DECLARE_LIGHTMAP_OR_SH(lmName, shName, index) half3 shName : TEXCOORD##index
+    #define OUTPUT_LIGHTMAP_UV(lightmapUV, lightmapScaleOffset, OUT)
+    #define OUTPUT_SH(normalWS, OUT) //OUT.xyz = SampleSHVertex(normalWS)
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 //                         44: Light Helpers                                    //
@@ -141,6 +153,7 @@ struct BRDFData
     half3 specular;
     half roughness;
     half roughness2;
+    half grazingTerm;
 
     // We save some light invariant BRDF terms so we don't have to recompute
     // them in the light loop. Take a look at DirectBRDF function for detailed explaination.
@@ -173,6 +186,7 @@ inline void InitializeBRDFDataDirect(half3 diffuse, half3 specular, half reflect
     //得到实际的粗糙度，这与迪士尼光照模型匹配。
     outBRDFData.roughness           = max(PerceptualSmoothnessToRoughness(smoothness), HALF_MIN_SQRT);
     outBRDFData.roughness2          = max(outBRDFData.roughness * outBRDFData.roughness, HALF_MIN);
+    outBRDFData.grazingTerm         = saturate(smoothness + reflectivity);
     outBRDFData.normalizationTerm   = outBRDFData.roughness * 4.0h + 2.0h;
     outBRDFData.roughness2MinusOne  = outBRDFData.roughness2 - 1.0h;
 
@@ -212,6 +226,20 @@ half3 GetLighting(SurfaceData surface, BRDFData outBRDFData, Light light)
     return IncomingLight(surface, light) * outBRDFData.diffuse;
 }
 
+// Computes the specular term for EnvironmentBRDF
+half3 EnvironmentBRDFSpecular(BRDFData brdfData, half fresnelTerm)
+{
+    float surfaceReduction = 1.0 / (brdfData.roughness2 + 1.0);
+    return surfaceReduction * lerp(brdfData.specular, brdfData.grazingTerm, fresnelTerm);
+}
+
+half3 EnvironmentBRDF(BRDFData brdfData, half3 indirectDiffuse, half3 indirectSpecular, half fresnelTerm)
+{
+    half3 c = indirectDiffuse * brdfData.diffuse;
+    c += indirectSpecular * EnvironmentBRDFSpecular(brdfData, fresnelTerm);
+    return c;
+}
+
 //393：根据公式得到镜面反射强度 Computes the scalar specular term for Minimalist CookTorrance BRDF
 // NOTE: needs to be multiplied with reflectance f0, i.e. specular color to complete
 half DirectBRDFSpecular(BRDFData brdfData, half3 normalWS, half3 lightDirectionWS, half3 viewDirectionWS)
@@ -245,6 +273,91 @@ half DirectBRDFSpecular(BRDFData brdfData, half3 normalWS, half3 lightDirectionW
 #endif
 
 return specularTerm;
+}
+//546：
+#define LIGHTMAP_NAME unity_Lightmap
+// #define LIGHTMAP_INDIRECTION_NAME unity_LightmapInd
+#define LIGHTMAP_SAMPLER_NAME samplerunity_Lightmap
+#define LIGHTMAP_SAMPLE_EXTRA_ARGS lightmapUV
+
+//554: Sample baked lightmap. Non-Direction and Directional if available.
+// Realtime GI is not supported.
+half3 SampleLightmap(float2 lightmapUV, half3 normalWS)
+{
+#ifdef UNITY_LIGHTMAP_FULL_HDR
+    bool encodedLightmap = false;
+#else
+    bool encodedLightmap = true;
+#endif
+
+    half4 decodeInstructions = half4(LIGHTMAP_HDR_MULTIPLIER, LIGHTMAP_HDR_EXPONENT, 0.0h, 0.0h);
+
+    // The shader library sample lightmap functions transform the lightmap uv coords to apply bias and scale.
+    // However, universal pipeline already transformed those coords in vertex. We pass half4(1, 1, 0, 0) and
+    // the compiler will optimize the transform away.
+    half4 transformCoords = half4(1, 1, 0, 0);
+
+// #if defined(LIGHTMAP_ON) && defined(DIRLIGHTMAP_COMBINED)
+//     return SampleDirectionalLightmap(TEXTURE2D_LIGHTMAP_ARGS(LIGHTMAP_NAME, LIGHTMAP_SAMPLER_NAME),
+//         TEXTURE2D_LIGHTMAP_ARGS(LIGHTMAP_INDIRECTION_NAME, LIGHTMAP_SAMPLER_NAME),
+//         LIGHTMAP_SAMPLE_EXTRA_ARGS, transformCoords, normalWS, encodedLightmap, decodeInstructions);
+#if defined(LIGHTMAP_ON)
+    return SampleSingleLightmap(TEXTURE2D_LIGHTMAP_ARGS(LIGHTMAP_NAME, LIGHTMAP_SAMPLER_NAME), LIGHTMAP_SAMPLE_EXTRA_ARGS, transformCoords, encodedLightmap, decodeInstructions);
+#else
+    return half3(0.0, 0.0, 0.0);
+#endif
+}
+
+//584： We either sample GI from baked lightmap or from probes.
+// If lightmap: sampleData.xy = lightmapUV
+// If probe: sampleData.xyz = L2 SH terms
+#if defined(LIGHTMAP_ON)
+#define SAMPLE_GI(lmName, shName, normalWSName) SampleLightmap(lmName, normalWSName)
+#else
+#define SAMPLE_GI(lmName, shName, normalWSName) half3(0,0,0)//SampleSHPixel(shName, normalWSName)
+#endif
+
+// half3 GlossyEnvironmentReflection(half3 reflectVector, half perceptualRoughness, half occlusion)
+// {
+// #if !defined(_ENVIRONMENTREFLECTIONS_OFF)
+//     half mip = PerceptualRoughnessToMipmapLevel(perceptualRoughness);
+//     half4 encodedIrradiance = SAMPLE_TEXTURECUBE_LOD(unity_SpecCube0, samplerunity_SpecCube0, reflectVector, mip);
+
+// //TODO:DOTS - we need to port probes to live in c# so we can manage this manually.
+// #if defined(UNITY_USE_NATIVE_HDR) || defined(UNITY_DOTS_INSTANCING_ENABLED)
+//     half3 irradiance = encodedIrradiance.rgb;
+// #else
+//     half3 irradiance = DecodeHDREnvironment(encodedIrradiance, unity_SpecCube0_HDR);
+// #endif
+
+//     return irradiance * occlusion;
+// #endif // GLOSSY_REFLECTIONS
+
+//     return _GlossyEnvironmentColor.rgb * occlusion;
+// }
+
+
+// half3 GlobalIllumination(BRDFData brdfData, 
+//     half3 bakedGI,
+//     half3 normalWS, half3 viewDirectionWS)
+// {
+//     half3 reflectVector = reflect(-viewDirectionWS, normalWS);
+//     half NoV = saturate(dot(normalWS, viewDirectionWS));
+//     half fresnelTerm = Pow4(1.0 - NoV);
+
+//     half3 indirectDiffuse = bakedGI;
+//     half3 indirectSpecular = GlossyEnvironmentReflection(reflectVector, brdfData.perceptualRoughness, occlusion);
+
+//     half3 color = EnvironmentBRDF(brdfData, indirectDiffuse, indirectSpecular, fresnelTerm);
+//     return color;
+// }
+
+//671:光照混合
+void MixRealtimeAndBakedGI(inout Light light, half3 normalWS, inout half3 bakedGI)
+{
+// #if defined(LIGHTMAP_ON) && defined(_MIXED_LIGHTING_SUBTRACTIVE)
+//     bakedGI = SubtractDirectMainLightFromLightmap(light, normalWS, bakedGI);
+// #endif
 }
 
 //702：pbr光照计算
@@ -291,9 +404,15 @@ half4 UniversalFragmentPBR(InputData inputData, SurfaceData surfaceData)
     InitializeBRDFData(surfaceData.albedo, surfaceData.metallic, surfaceData.smoothness, surfaceData.alpha, brdfData);
 
     Light mainLight = GetMainLight(inputData.shadowCoord, inputData.positionWS);
+    
+    MixRealtimeAndBakedGI(mainLight, inputData.normalWS, inputData.bakedGI);
+
+    // half3 color = GlobalIllumination(brdfData, 
+    //                                  inputData.bakedGI, 
+    //                                  inputData.normalWS, inputData.viewDirectionWS);
     // half3 color = GetLighting(surfaceData, mainLight);
     half3 color = LightingPhysicallyBased(brdfData, mainLight, surfaceData.normalTS, inputData.viewDirectionWS, specularHighlightsOff);
-
+    color += inputData.bakedGI;
 #ifdef _ADDITIONAL_LIGHTS
     uint pixelLightCount = GetAdditionalLightsCount();
     for (uint lightIndex = 0u; lightIndex < pixelLightCount; ++lightIndex)
@@ -302,6 +421,7 @@ half4 UniversalFragmentPBR(InputData inputData, SurfaceData surfaceData)
         color += GetLighting(surfaceData, brdfData, light);
     }
 #endif
+
     return half4(color, surfaceData.alpha);
 }
 #endif

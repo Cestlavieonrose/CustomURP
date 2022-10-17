@@ -7,6 +7,7 @@ struct Attributes
 {
     float4 positionOS   : POSITION;
     float2 baseUV:TEXCOORD0;
+    float2 lightmapUV   : TEXCOORD1;
     //表面法线
     float3 normalOS:NORMAL;
     UNITY_VERTEX_INPUT_INSTANCE_ID
@@ -15,6 +16,7 @@ struct Attributes
 //用作片元函数的输入参数
 struct Varyings
 {
+    DECLARE_LIGHTMAP_OR_SH(lightmapUV, vertexSH, 1);//声明lightmap or sh 变量，探针和lightmnap二选一
 #if defined(REQUIRES_WORLD_SPACE_POS_INTERPOLATOR)
     float3 positionWS               : TEXCOORD2;
 #endif
@@ -41,6 +43,7 @@ void InitializeInputData(Varyings input, out InputData inputData)
 #else
     inputData.shadowCoord = float4(0, 0, 0, 0);
 #endif
+    inputData.bakedGI = SAMPLE_GI(input.lightmapUV, input.vertexSH, inputData.normalWS);
 }
 
 //顶点函数
@@ -62,6 +65,9 @@ Varyings LitPassVertex(Attributes input)
 #endif
     half3 viewDirWS = GetWorldSpaceViewDir(positionWS);
     output.viewDirWS = viewDirWS;
+
+    OUTPUT_LIGHTMAP_UV(input.lightmapUV, unity_LightmapST, output.lightmapUV);
+    OUTPUT_SH(output.normalWS.xyz, output.vertexSH);
     return output;
 }
 

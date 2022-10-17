@@ -216,6 +216,10 @@ namespace UnityEngine.Rendering.Custom
         public static readonly string ShadowsShadowMask = "SHADOWS_SHADOWMASK";
 
         public static readonly string LinearToSRGBConversion = "_LINEAR_TO_SRGB_CONVERSION";
+
+        public static readonly string LIGHTMAP_ON = "LIGHTMAP_ON"; //开启光照贴图模式 否则是探针球模式
+        public static readonly string _ALPHATEST_ON = "_ALPHATEST_ON";
+        public static readonly string DIRLIGHTMAP_COMBINED = "DIRLIGHTMAP_COMBINED";
     }
 
     public sealed partial class CustomRenderPipeline
