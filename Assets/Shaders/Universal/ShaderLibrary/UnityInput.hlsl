@@ -30,6 +30,15 @@ real4 unity_LightIndices[2];
 
 // Lightmap block feature
 float4 unity_LightmapST;//120:lightmap开启下，对于每一个渲染对象在lightmap中的位置，xy  缩放  zw 偏移
+
+// 125：SH block feature 采样光照探针的时候使用
+real4 unity_SHAr;
+real4 unity_SHAg;
+real4 unity_SHAb;
+real4 unity_SHBr;
+real4 unity_SHBg;
+real4 unity_SHBb;
+real4 unity_SHC;
 CBUFFER_END//133
 
 float4x4 unity_MatrixV; //192

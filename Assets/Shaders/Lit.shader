@@ -51,7 +51,7 @@ Shader "CustomRP/Lit"
             #pragma shader_feature_local _RECEIVE_SHADOWS_OFF //材质是否开启接受光照
 
             // Unity defined keywords
-            #pragma multi_compile _ LIGHTMAP_ON
+            #pragma multi_compile _ LIGHTMAP_ON//设置lightmap还是probe需要重新烘焙后才会生效
             
             #pragma multi_compile_instancing
             #pragma vertex LitPassVertex

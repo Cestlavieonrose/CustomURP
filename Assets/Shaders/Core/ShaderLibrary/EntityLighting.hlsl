@@ -6,7 +6,7 @@
 #endif
 
 #include "Common.hlsl"
-// #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
+#include "Color.hlsl"
 
 #define LIGHTMAP_RGBM_MAX_GAMMA     real(5.0)       // NB: Must match value in RGBMRanges.h
 #define LIGHTMAP_RGBM_MAX_LINEAR    real(34.493242) // LIGHTMAP_RGBM_MAX_GAMMA ^ 2.2
@@ -32,9 +32,83 @@
 #endif
 
 
-#if SHADER_API_MOBILE || SHADER_API_GLES || SHADER_API_GLES3
-#pragma warning (enable : 3205) // conversion of larger type to smaller
+//36： Ref: "Efficient Evaluation of Irradiance Environment Maps" from ShaderX 2
+real3 SHEvalLinearL0L1(real3 N, real4 shAr, real4 shAg, real4 shAb)
+{
+    real4 vA = real4(N, 1.0);
+    real3 x1;
+    // Linear (L1) + constant (L0) polynomial terms
+    x1.r = dot(shAr, vA);
+    x1.g = dot(shAg, vA);
+    x1.b = dot(shAb, vA);
+    return x1;
+}
+
+real3 SHEvalLinearL2(real3 N, real4 shBr, real4 shBg, real4 shBb, real4 shC)
+{
+    real3 x2;
+    // 4 of the quadratic (L2) polynomials
+    real4 vB = N.xyzz * N.yzzx;
+    x2.r = dot(shBr, vB);
+    x2.g = dot(shBg, vB);
+    x2.b = dot(shBb, vB);
+
+    // Final (5th) quadratic (L2) polynomial
+    real vC = N.x * N.x - N.y * N.y;
+    real3 x3 = shC.rgb * vC;
+
+    return x2 + x3;
+}
+
+
+#if HAS_HALF
+half3 SampleSH9(half4 SHCoefficients[7], half3 N)
+{
+    half4 shAr = SHCoefficients[0];
+    half4 shAg = SHCoefficients[1];
+    half4 shAb = SHCoefficients[2];
+    half4 shBr = SHCoefficients[3];
+    half4 shBg = SHCoefficients[4];
+    half4 shBb = SHCoefficients[5];
+    half4 shCr = SHCoefficients[6];
+
+    // Linear + constant polynomial terms
+    half3 res = SHEvalLinearL0L1(N, shAr, shAg, shAb);
+
+    // Quadratic polynomials
+    res += SHEvalLinearL2(N, shBr, shBg, shBb, shCr);
+
+#ifdef UNITY_COLORSPACE_GAMMA
+    res = LinearToSRGB(res);
 #endif
+
+    return res;
+}
+#endif
+
+float3 SampleSH9(float4 SHCoefficients[7], float3 N)
+{
+    float4 shAr = SHCoefficients[0];
+    float4 shAg = SHCoefficients[1];
+    float4 shAb = SHCoefficients[2];
+    float4 shBr = SHCoefficients[3];
+    float4 shBg = SHCoefficients[4];
+    float4 shBb = SHCoefficients[5];
+    float4 shCr = SHCoefficients[6];
+
+    // Linear + constant polynomial terms
+    float3 res = SHEvalLinearL0L1(N, shAr, shAg, shAb);
+
+    // Quadratic polynomials
+    res += SHEvalLinearL2(N, shBr, shBg, shBb, shCr);
+
+#ifdef UNITY_COLORSPACE_GAMMA
+    res = LinearToSRGB(res);
+#endif
+
+    return res;
+}
+
 
 //250
 real3 UnpackLightmapRGBM(real4 rgbmInput, real4 decodeInstructions)
