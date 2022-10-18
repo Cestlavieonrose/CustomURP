@@ -46,4 +46,14 @@ half OutputAlpha(half outputAlpha, half surfaceType)
     return surfaceType == 1 ? outputAlpha : 1.0;
 }
 
+//165:
+real3 NormalizeNormalPerPixel(real3 normalWS)
+{
+    // #if defined(SHADER_QUALITY_HIGH) || defined(_NORMALMAP)
+    //     return normalize(normalWS);
+    // #else
+        return normalWS;
+    // #endif
+}
+
 #endif // UNITY_SHADER_VARIABLES_FUNCTIONS_INCLUDED

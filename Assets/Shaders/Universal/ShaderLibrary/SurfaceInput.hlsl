@@ -7,7 +7,7 @@
 
 TEXTURE2D(_BaseMap);            SAMPLER(sampler_BaseMap);
 // TEXTURE2D(_BumpMap);            SAMPLER(sampler_BumpMap);
-// TEXTURE2D(_EmissionMap);        SAMPLER(sampler_EmissionMap);
+TEXTURE2D(_EmissionMap);        SAMPLER(sampler_EmissionMap);
 
 ///////////////////////////////////////////////////////////////////////////////
 //                      Material Property Helpers                            //
@@ -43,14 +43,13 @@ half3 SampleNormal()
 // #endif
 }
 
-// half3 SampleEmission(float2 uv, half3 emissionColor, TEXTURE2D_PARAM(emissionMap, sampler_emissionMap))
-half3 SampleEmission()
+half3 SampleEmission(float2 uv, half3 emissionColor, TEXTURE2D_PARAM(emissionMap, sampler_emissionMap))
 {
-// #ifndef _EMISSION
+#ifndef _EMISSION
     return 0;
-// #else
-//     return SAMPLE_TEXTURE2D(emissionMap, sampler_emissionMap, uv).rgb * emissionColor;
-// #endif
+#else
+    return SAMPLE_TEXTURE2D(emissionMap, sampler_emissionMap, uv).rgb * emissionColor;
+#endif
 }
 
 #endif

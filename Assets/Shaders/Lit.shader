@@ -18,6 +18,10 @@ Shader "CustomRP/Lit"
         [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend ("Dst Blend", Float) = 0
         //默认写入深度缓冲区
         [Enum(Off, 0, On, 1)]_ZWrite("Z Write", Float) = 1
+
+        [Toggle(_EMISSION)] _Emision("自发光", Float) = 0
+        [HDR] _EmissionColor("Color", Color) = (0,0,0)
+        _EmissionMap("Emission", 2D) = "white" {}
     }
     SubShader
     {
@@ -49,6 +53,7 @@ Shader "CustomRP/Lit"
             #pragma shader_feature_local_fragment _ALPHATEST_ON
             #pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF //PBR是否忽略高光部分的计算
             #pragma shader_feature_local _RECEIVE_SHADOWS_OFF //材质是否开启接受光照
+            #pragma shader_feature_local_fragment _EMISSION //自发光
 
             // Unity defined keywords
             #pragma multi_compile _ LIGHTMAP_ON//设置lightmap还是probe需要重新烘焙后才会生效
@@ -103,7 +108,7 @@ Shader "CustomRP/Lit"
             #pragma fragment UniversalFragmentMeta
 
             // #pragma shader_feature_local_fragment _SPECULAR_SETUP
-            // #pragma shader_feature_local_fragment _EMISSION
+            #pragma shader_feature_local_fragment _EMISSION
             // #pragma shader_feature_local_fragment _METALLICSPECGLOSSMAP
             #pragma shader_feature_local_fragment _ALPHATEST_ON
             // #pragma shader_feature_local_fragment _ _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A

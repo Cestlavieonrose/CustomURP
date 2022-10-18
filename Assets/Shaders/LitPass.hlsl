@@ -30,13 +30,17 @@ struct Varyings
 
 };
 
-void InitializeInputData(Varyings input, out InputData inputData)
+void InitializeInputData(Varyings input, half3 normalTS, out InputData inputData)
 {
     inputData = (InputData)0;
 #if defined(REQUIRES_WORLD_SPACE_POS_INTERPOLATOR)
     inputData.positionWS = input.positionWS;
 #endif
     half3 viewDirWS = SafeNormalize(input.viewDirWS);
+
+    inputData.normalWS = input.normalWS;
+    inputData.normalWS = NormalizeNormalPerPixel(inputData.normalWS);
+
     inputData.viewDirectionWS = viewDirWS;
 #if defined(MAIN_LIGHT_CALCULATE_SHADOWS) //材质开启接受，主光源开启阴影caster
     inputData.shadowCoord = TransformWorldToShadowCoord(inputData.positionWS);
@@ -75,24 +79,13 @@ Varyings LitPassVertex(Attributes input)
 half4 LitPassFragment(Varyings input):SV_Target
 {
     UNITY_SETUP_INSTANCE_ID(input);
-
-    float4 baseMap = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.baseUV);
-    float4 baseColor = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseColor);
-    float4 base = baseMap*baseColor;
-    #if defined(_ALPHATEST_ON)
-        clip(base.a - UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Cutoff));
-    #endif
-
     //定义一个Surface并填充属性
     SurfaceData surface;
-    surface.normalTS = normalize(input.normalWS);
-    surface.albedo = base.rgb;
-    surface.alpha = base.a;
-    surface.metallic = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Metallic);
-    surface.smoothness = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Smoothness);
+    InitializeStandardLitSurfaceData(input.baseUV, surface);
+    // surface.normalTS = normalize(input.normalWS);
     //定义一个inputData
     InputData inputData;
-    InitializeInputData(input, inputData);
+    InitializeInputData(input, surface.normalTS, inputData);
     //通过表面属性计算最终光照结果
     half4 color = UniversalFragmentPBR(inputData, surface);
     color.a = OutputAlpha(color.a, 1);

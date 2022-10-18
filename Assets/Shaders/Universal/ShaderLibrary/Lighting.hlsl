@@ -464,7 +464,7 @@ half4 UniversalFragmentPBR(InputData inputData, SurfaceData surfaceData)
     //                                  inputData.bakedGI, 
     //                                  inputData.normalWS, inputData.viewDirectionWS);
     // half3 color = GetLighting(surfaceData, mainLight);
-    half3 color = LightingPhysicallyBased(brdfData, mainLight, surfaceData.normalTS, inputData.viewDirectionWS, specularHighlightsOff);
+    half3 color = LightingPhysicallyBased(brdfData, mainLight, inputData.normalWS, inputData.viewDirectionWS, specularHighlightsOff);
     color += inputData.bakedGI;
 #ifdef _ADDITIONAL_LIGHTS
     uint pixelLightCount = GetAdditionalLightsCount();
@@ -474,6 +474,7 @@ half4 UniversalFragmentPBR(InputData inputData, SurfaceData surfaceData)
         color += GetLighting(surfaceData, brdfData, light);
     }
 #endif
+    color += surfaceData.emission;
 
     return half4(color, surfaceData.alpha);
 }

@@ -18,6 +18,7 @@ UNITY_INSTANCING_BUFFER_START(UnityPerMaterial)
 //提供纹理的缩放和平移
 UNITY_DEFINE_INSTANCED_PROP(float4, _BaseMap_ST)
 UNITY_DEFINE_INSTANCED_PROP(float4, _BaseColor)
+UNITY_DEFINE_INSTANCED_PROP(half4, _EmissionColor)
 UNITY_DEFINE_INSTANCED_PROP(float, _Cutoff)
 
 UNITY_DEFINE_INSTANCED_PROP(half, _Metallic)
@@ -47,13 +48,13 @@ half4 SampleMetallicSpecGloss(float2 uv, half albedoAlpha)
 //     #if _SPECULAR_SETUP
 //         specGloss.rgb = _SpecColor.rgb;
 //     #else
-        specGloss.rgb = _Metallic.rrr;
+        specGloss.rgb = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Metallic).rrr;
     // #endif
 
     // #ifdef _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
     //     specGloss.a = albedoAlpha * _Smoothness;
     // #else
-        specGloss.a = _Smoothness;
+        specGloss.a = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Smoothness);
     // #endif
 // #endif
 
@@ -80,7 +81,7 @@ half SampleOcclusion(float2 uv)
 inline void InitializeStandardLitSurfaceData(float2 uv, out SurfaceData outSurfaceData)
 {
     half4 albedoAlpha = SampleAlbedoAlpha(uv, TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap));
-    outSurfaceData.alpha = Alpha(albedoAlpha.a, _BaseColor, _Cutoff);
+    outSurfaceData.alpha = Alpha(albedoAlpha.a, UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseColor), UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Cutoff));
 
     half4 specGloss = SampleMetallicSpecGloss(uv, albedoAlpha.a);
     outSurfaceData.albedo = albedoAlpha.rgb * _BaseColor.rgb;
@@ -96,7 +97,7 @@ inline void InitializeStandardLitSurfaceData(float2 uv, out SurfaceData outSurfa
     outSurfaceData.smoothness = specGloss.a;
     outSurfaceData.normalTS = SampleNormal();//SampleNormal(uv, TEXTURE2D_ARGS(_BumpMap, sampler_BumpMap), _BumpScale);
     outSurfaceData.occlusion = SampleOcclusion(uv);
-    outSurfaceData.emission = SampleEmission();//SampleEmission(uv, _EmissionColor.rgb, TEXTURE2D_ARGS(_EmissionMap, sampler_EmissionMap));
+    outSurfaceData.emission = SampleEmission(uv, _EmissionColor.rgb, TEXTURE2D_ARGS(_EmissionMap, sampler_EmissionMap));
 
     // outSurfaceData.clearCoatMask       = 0.0h;
     // outSurfaceData.clearCoatSmoothness = 0.0h;
