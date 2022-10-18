@@ -33,7 +33,7 @@ Shader "CustomRP/Lit"
             ZWrite[_ZWrite]
             HLSLPROGRAM
             //renderdoc debugger
-            #pragma enable_d3d11_debug_symbols
+            // #pragma enable_d3d11_debug_symbols
 
             //在Pass中将着色器编译目标级别设置为3.5，该级别越高，允许使用现代GPU的功能越多。
             //如果不设置，Unity默认将着色器编译目标级别设为2.5，介于DirectX着色器模型2.0和3.0之间。
@@ -72,7 +72,7 @@ Shader "CustomRP/Lit"
             HLSLPROGRAM
             #pragma target 3.5
             //renderdoc debugger
-            #pragma enable_d3d11_debug_symbols
+            // #pragma enable_d3d11_debug_symbols
 
             // Material Keywords
             #pragma shader_feature_local_fragment _ALPHATEST_ON
@@ -85,6 +85,35 @@ Shader "CustomRP/Lit"
             #pragma fragment ShadowCasterPassFragment
             #include "LitInput.hlsl"
             #include "ShadowCasterPass.hlsl"
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "Meta"
+            Tags{"LightMode" = "Meta"}
+
+            Cull Off
+
+            HLSLPROGRAM
+            #pragma exclude_renderers gles gles3 glcore
+            #pragma target 4.5
+
+            #pragma vertex UniversalVertexMeta
+            #pragma fragment UniversalFragmentMeta
+
+            // #pragma shader_feature_local_fragment _SPECULAR_SETUP
+            // #pragma shader_feature_local_fragment _EMISSION
+            // #pragma shader_feature_local_fragment _METALLICSPECGLOSSMAP
+            #pragma shader_feature_local_fragment _ALPHATEST_ON
+            // #pragma shader_feature_local_fragment _ _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+            // #pragma shader_feature_local _ _DETAIL_MULX2 _DETAIL_SCALED
+
+            // #pragma shader_feature_local_fragment _SPECGLOSSMAP
+
+            #include "LitInput.hlsl"
+            #include "LitMetaPass.hlsl"
+
             ENDHLSL
         }
     }

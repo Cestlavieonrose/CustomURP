@@ -9,8 +9,8 @@ struct SurfaceData
     half  metallic;
     half  smoothness;
     half3 normalTS;
-    // half3 emission;
-    // half  occlusion;
+    half3 emission;
+    half  occlusion;
     half  alpha;
     // half  clearCoatMask;
     // half  clearCoatSmoothness;

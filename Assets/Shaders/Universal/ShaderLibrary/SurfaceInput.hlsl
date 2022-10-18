@@ -28,4 +28,29 @@ half4 SampleAlbedoAlpha(float2 uv, TEXTURE2D_PARAM(albedoAlphaMap, sampler_albed
     return SAMPLE_TEXTURE2D(albedoAlphaMap, sampler_albedoAlphaMap, uv);
 }
 
+// half3 SampleNormal(float2 uv, TEXTURE2D_PARAM(bumpMap, sampler_bumpMap), half scale = 1.0h)
+half3 SampleNormal()
+{
+// #ifdef _NORMALMAP
+//     half4 n = SAMPLE_TEXTURE2D(bumpMap, sampler_bumpMap, uv);
+//     #if BUMP_SCALE_NOT_SUPPORTED
+//         return UnpackNormal(n);
+//     #else
+//         return UnpackNormalScale(n, scale);
+//     #endif
+// #else
+    return half3(0.0h, 0.0h, 1.0h);
+// #endif
+}
+
+// half3 SampleEmission(float2 uv, half3 emissionColor, TEXTURE2D_PARAM(emissionMap, sampler_emissionMap))
+half3 SampleEmission()
+{
+// #ifndef _EMISSION
+    return 0;
+// #else
+//     return SAMPLE_TEXTURE2D(emissionMap, sampler_emissionMap, uv).rgb * emissionColor;
+// #endif
+}
+
 #endif
