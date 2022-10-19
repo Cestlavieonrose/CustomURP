@@ -52,7 +52,8 @@ Varyings ShadowCasterPassVertex(Attributes input)
 //片元函数
 void ShadowCasterPassFragment(Varyings input)
 {
-    Alpha(SampleAlbedoAlpha(input.baseUV, TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap)).a, _BaseColor, _Cutoff);
+    
+    Alpha(SampleAlbedoAlpha(input.baseUV, TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap)).a, UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseColor), _Cutoff);
 }
 
 #endif

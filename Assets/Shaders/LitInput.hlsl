@@ -84,7 +84,7 @@ inline void InitializeStandardLitSurfaceData(float2 uv, out SurfaceData outSurfa
     outSurfaceData.alpha = Alpha(albedoAlpha.a, UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseColor), UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Cutoff));
 
     half4 specGloss = SampleMetallicSpecGloss(uv, albedoAlpha.a);
-    outSurfaceData.albedo = albedoAlpha.rgb * _BaseColor.rgb;
+    outSurfaceData.albedo = albedoAlpha.rgb * UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseColor).rgb;
 
 // #if _SPECULAR_SETUP
 //     outSurfaceData.metallic = 1.0h;
@@ -97,7 +97,7 @@ inline void InitializeStandardLitSurfaceData(float2 uv, out SurfaceData outSurfa
     outSurfaceData.smoothness = specGloss.a;
     outSurfaceData.normalTS = SampleNormal();//SampleNormal(uv, TEXTURE2D_ARGS(_BumpMap, sampler_BumpMap), _BumpScale);
     outSurfaceData.occlusion = SampleOcclusion(uv);
-    outSurfaceData.emission = SampleEmission(uv, _EmissionColor.rgb, TEXTURE2D_ARGS(_EmissionMap, sampler_EmissionMap));
+    outSurfaceData.emission = SampleEmission(uv, UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _EmissionColor).rgb, TEXTURE2D_ARGS(_EmissionMap, sampler_EmissionMap));
 
     // outSurfaceData.clearCoatMask       = 0.0h;
     // outSurfaceData.clearCoatSmoothness = 0.0h;
