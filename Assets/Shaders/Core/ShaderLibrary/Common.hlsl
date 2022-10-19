@@ -112,6 +112,11 @@
 //192
 #include "Macros.hlsl"
 
+//696
+real Pow4(real x)
+{
+    return (x * x) * (x * x);
+}
 
 // Using pow often result to a warning like this
 // "pow(f, e) will not work for negative f, use abs(f) or conditionally handle negative values if you expect them"

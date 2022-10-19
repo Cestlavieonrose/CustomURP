@@ -137,6 +137,15 @@ real3 DecodeLightmap(real4 encodedIlluminance, real4 decodeInstructions)
 #endif
 }
 
+real3 DecodeHDREnvironment(real4 encodedIrradiance, real4 decodeInstructions)
+{
+    // Take into account texture alpha if decodeInstructions.w is true(the alpha value affects the RGB channels)
+    real alpha = max(decodeInstructions.w * (encodedIrradiance.a - 1.0) + 1.0, 0.0);
+
+    // If Linear mode is not supported we can skip exponent part
+    return (decodeInstructions.x * PositivePow(alpha, decodeInstructions.y)) * encodedIrradiance.rgb;
+}
+
 //291
 #define TEXTURE2D_LIGHTMAP_PARAM TEXTURE2D_PARAM
 #define TEXTURE2D_LIGHTMAP_ARGS TEXTURE2D_ARGS

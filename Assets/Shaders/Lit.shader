@@ -5,6 +5,10 @@ Shader "CustomRP/Lit"
         //金属度和光滑度
         _Metallic("Metallic", Range(0,  1)) =  0
         _Smoothness("Smoothness", Range(0,  1)) = 0.5
+
+        [ToggleOff] _SpecularHighlights("Specular Highlights", Float) = 1.0
+        [ToggleOff] _EnvironmentReflections("Environment Reflections", Float) = 1.0
+
         _BaseColor("Color", Color) = (0.5, 0.5, 0.5, 1.0)
         _BaseMap("Texture", 2D) = "white" {}
         
@@ -41,7 +45,7 @@ Shader "CustomRP/Lit"
             ZWrite[_ZWrite]
             HLSLPROGRAM
             //renderdoc debugger
-            // #pragma enable_d3d11_debug_symbols
+            #pragma enable_d3d11_debug_symbols
 
             //在Pass中将着色器编译目标级别设置为3.5，该级别越高，允许使用现代GPU的功能越多。
             //如果不设置，Unity默认将着色器编译目标级别设为2.5，介于DirectX着色器模型2.0和3.0之间。
@@ -52,12 +56,15 @@ Shader "CustomRP/Lit"
             // Universal Pipeline keywords
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS//MainLightShadowCasterPass.cs中如果进行主光源阴影投射就开启
+            #pragma multi_compile _ _MIXED_LIGHTING_SUBTRACTIVE //light为mix，且shadow设置部位none（主要控制bakeGI和实时阴影的混合，因此light的shadow必须开），混合模式为substractive的时候开启
             // Material Keywords
             #pragma shader_feature_local_fragment _ALPHAPREMULTIPLY_ON
             #pragma shader_feature_local_fragment _ALPHATEST_ON
-            #pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF //PBR是否忽略高光部分的计算
+            #pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF //PBR是否忽略高光部分的计算，材质设置
+            #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF  //是否关闭环境反射球计算，材质上设置
             #pragma shader_feature_local _RECEIVE_SHADOWS_OFF //材质是否开启接受光照
             #pragma shader_feature_local_fragment _EMISSION //自发光
+            
 
             // Unity defined keywords
             #pragma multi_compile _ LIGHTMAP_ON//设置lightmap还是probe需要重新烘焙后才会生效
@@ -81,7 +88,7 @@ Shader "CustomRP/Lit"
             HLSLPROGRAM
             #pragma target 3.5
             //renderdoc debugger
-            // #pragma enable_d3d11_debug_symbols
+            #pragma enable_d3d11_debug_symbols
 
             // Material Keywords
             #pragma shader_feature_local_fragment _ALPHATEST_ON

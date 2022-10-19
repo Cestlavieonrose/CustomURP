@@ -23,6 +23,9 @@ struct InputData
     half4   shadowMask;
 };
 
+half4 _GlossyEnvironmentColor;
+half4 _SubtractiveShadowColor; //在Subtractive下Unity设置的阴影颜色
+
 //主光源，方向光：方向，否则传递位置
 float4 _MainLightPosition;//41
 half4 _MainLightColor;//42

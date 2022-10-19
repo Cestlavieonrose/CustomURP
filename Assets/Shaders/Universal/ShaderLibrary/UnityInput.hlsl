@@ -28,6 +28,10 @@ real4 unity_WorldTransformParams; //107
 real4 unity_LightData;
 real4 unity_LightIndices[2];
 
+// Reflection Probe 0 block feature
+// HDR environment map decode instructions
+real4 unity_SpecCube0_HDR;
+
 // Lightmap block feature
 float4 unity_LightmapST;//120:lightmap开启下，对于每一个渲染对象在lightmap中的位置，xy  缩放  zw 偏移
 float4 unity_DynamicLightmapST;
@@ -45,6 +49,10 @@ CBUFFER_END//133
 float4x4 unity_MatrixV; //192
 //定义一个从世界空间转换到裁剪空间的矩阵
 float4x4 unity_MatrixVP;//195
+
+// Unity specific
+TEXTURECUBE(unity_SpecCube0);
+SAMPLER(samplerunity_SpecCube0);
 
 //209： Main lightmap
 TEXTURE2D(unity_Lightmap);//lightmap贴图

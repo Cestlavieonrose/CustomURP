@@ -34,8 +34,18 @@ public class CustomShaderGUI : ShaderGUI
         {
            // CopyLightMappingProperties();
            SetShadowCasterPass();
+           SetAdvace();
         }
         // ReceiveShadowPreset();
+    }
+
+    void SetAdvace()
+    {
+        MaterialProperty specularHighlights = FindProperty("_SpecularHighlights", properties, false);
+        SetKeyWord("_SPECULARHIGHLIGHTS_OFF", specularHighlights.floatValue == 0.0f);
+
+        MaterialProperty environmentReflections = FindProperty("_EnvironmentReflections", properties, false);
+        SetKeyWord("_ENVIRONMENTREFLECTIONS_OFF", environmentReflections.floatValue == 0.0f);
     }
 
     //设置材质的shadowcaster pass 是否启用

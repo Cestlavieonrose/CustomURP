@@ -219,4 +219,10 @@ float3 ApplyShadowBias(float3 positionWS, float3 normalWS, float3 lightDirection
 
 #define _MainLightShadowData _MainLightShadowParams //391
 
+//401
+half GetMainLightShadowStrength()
+{
+    return _MainLightShadowData.x;
+}
+
 #endif

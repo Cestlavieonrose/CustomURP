@@ -4,6 +4,7 @@
 #include "../../Core/ShaderLibrary/Common.hlsl"
 #include "../../Core/ShaderLibrary/CommonMaterial.hlsl"
 #include "../../Core/ShaderLibrary/EntityLighting.hlsl"
+#include "../../Core/ShaderLibrary/ImageBasedLighting.hlsl"
 #include "Core.hlsl"
 #include "SurfaceData.hlsl"
 #include "Shadows.hlsl"
@@ -18,6 +19,11 @@
     #define OUTPUT_LIGHTMAP_UV(lightmapUV, lightmapScaleOffset, OUT)
     #define OUTPUT_SH(normalWS, OUT) OUT.xyz = SampleSHVertex(normalWS)
 #endif
+
+// // Renamed -> LIGHTMAP_SHADOW_MIXING
+// #if !defined(_MIXED_LIGHTING_SUBTRACTIVE) && defined(LIGHTMAP_SHADOW_MIXING) && !defined(SHADOWS_SHADOWMASK)
+//     #define _MIXED_LIGHTING_SUBTRACTIVE
+// #endif
 
 ///////////////////////////////////////////////////////////////////////////////
 //                         44: Light Helpers                                    //
@@ -151,6 +157,7 @@ struct BRDFData
 {
     half3 diffuse;
     half3 specular;
+    half perceptualRoughness;
     half roughness;
     half roughness2;
     half grazingTerm;
@@ -184,6 +191,7 @@ inline void InitializeBRDFDataDirect(half3 diffuse, half3 specular, half reflect
     //我们使用源码库中CommonMaterial.hlsl的PerceptualSmoothnessToPerceptualRoughness方法，
     //通过感知到的光滑度得到粗糙度，然后通过PerceptualRoughnessToRoughness方法将感知到的粗糙度平方，
     //得到实际的粗糙度，这与迪士尼光照模型匹配。
+    outBRDFData.perceptualRoughness = PerceptualSmoothnessToPerceptualRoughness(smoothness);
     outBRDFData.roughness           = max(PerceptualSmoothnessToRoughness(smoothness), HALF_MIN_SQRT);
     outBRDFData.roughness2          = max(outBRDFData.roughness * outBRDFData.roughness, HALF_MIN);
     outBRDFData.grazingTerm         = saturate(smoothness + reflectivity);
@@ -370,47 +378,76 @@ half3 SampleLightmap(float2 lightmapUV, half3 normalWS)
 #define SAMPLE_GI(lmName, shName, normalWSName) SampleSHPixel(shName, normalWSName)
 #endif
 
-// half3 GlossyEnvironmentReflection(half3 reflectVector, half perceptualRoughness, half occlusion)
-// {
-// #if !defined(_ENVIRONMENTREFLECTIONS_OFF)
-//     half mip = PerceptualRoughnessToMipmapLevel(perceptualRoughness);
-//     half4 encodedIrradiance = SAMPLE_TEXTURECUBE_LOD(unity_SpecCube0, samplerunity_SpecCube0, reflectVector, mip);
-
-// //TODO:DOTS - we need to port probes to live in c# so we can manage this manually.
-// #if defined(UNITY_USE_NATIVE_HDR) || defined(UNITY_DOTS_INSTANCING_ENABLED)
-//     half3 irradiance = encodedIrradiance.rgb;
-// #else
-//     half3 irradiance = DecodeHDREnvironment(encodedIrradiance, unity_SpecCube0_HDR);
-// #endif
-
-//     return irradiance * occlusion;
-// #endif // GLOSSY_REFLECTIONS
-
-//     return _GlossyEnvironmentColor.rgb * occlusion;
-// }
+//Subtract下 对实时阴影和bakegi根据shadowStrength做插值，
+half3 SubtractDirectMainLightFromLightmap(Light mainLight, half3 normalWS, half3 bakedGI)
+{
+    // Let's try to make realtime shadows work on a surface, which already contains
+    // baked lighting and shadowing from the main sun light.
+    // Summary:
+    // 1) Calculate possible value in the shadow by subtracting estimated light contribution from the places occluded by realtime shadow:
+    //      a) preserves other baked lights and light bounces
+    //      b) eliminates shadows on the geometry facing away from the light
+    // 2) Clamp against user defined ShadowColor.
+    // 3) Pick original lightmap value, if it is the darkest one.
 
 
-// half3 GlobalIllumination(BRDFData brdfData, 
-//     half3 bakedGI,
-//     half3 normalWS, half3 viewDirectionWS)
-// {
-//     half3 reflectVector = reflect(-viewDirectionWS, normalWS);
-//     half NoV = saturate(dot(normalWS, viewDirectionWS));
-//     half fresnelTerm = Pow4(1.0 - NoV);
+    // 1) Gives good estimate of illumination as if light would've been shadowed during the bake.
+    // We only subtract the main direction light. This is accounted in the contribution term below.
+    half shadowStrength = GetMainLightShadowStrength();
+    half contributionTerm = saturate(dot(mainLight.direction, normalWS));
+    half3 lambert = mainLight.color * contributionTerm;
+    half3 estimatedLightContributionMaskedByInverseOfShadow = lambert * (1.0 - mainLight.shadowAttenuation);
+    half3 subtractedLightmap = bakedGI - estimatedLightContributionMaskedByInverseOfShadow;
 
-//     half3 indirectDiffuse = bakedGI;
-//     half3 indirectSpecular = GlossyEnvironmentReflection(reflectVector, brdfData.perceptualRoughness, occlusion);
+    // 2) Allows user to define overall ambient of the scene and control situation when realtime shadow becomes too dark.
+    half3 realtimeShadow = max(subtractedLightmap, _SubtractiveShadowColor.xyz);
+    realtimeShadow = lerp(bakedGI, realtimeShadow, shadowStrength);
 
-//     half3 color = EnvironmentBRDF(brdfData, indirectDiffuse, indirectSpecular, fresnelTerm);
-//     return color;
-// }
+    // 3) Pick darkest color
+    return min(bakedGI, realtimeShadow);
+}
+
+half3 GlossyEnvironmentReflection(half3 reflectVector, half perceptualRoughness)
+{
+#if !defined(_ENVIRONMENTREFLECTIONS_OFF)//环境光反射球没关闭
+    half mip = PerceptualRoughnessToMipmapLevel(perceptualRoughness);
+    half4 encodedIrradiance = SAMPLE_TEXTURECUBE_LOD(unity_SpecCube0, samplerunity_SpecCube0, reflectVector, mip);
+
+//TODO:DOTS - we need to port probes to live in c# so we can manage this manually.
+#if defined(UNITY_USE_NATIVE_HDR) || defined(UNITY_DOTS_INSTANCING_ENABLED)
+    half3 irradiance = encodedIrradiance.rgb;
+#else
+    half3 irradiance = DecodeHDREnvironment(encodedIrradiance, unity_SpecCube0_HDR);
+#endif
+
+    return irradiance;
+#endif // GLOSSY_REFLECTIONS
+
+    return _GlossyEnvironmentColor.rgb;
+}
+
+//636：
+half3 GlobalIllumination(BRDFData brdfData, 
+    half3 bakedGI,
+    half3 normalWS, half3 viewDirectionWS)
+{
+    half3 reflectVector = reflect(-viewDirectionWS, normalWS);
+    half NoV = saturate(dot(normalWS, viewDirectionWS));
+    half fresnelTerm = Pow4(1.0 - NoV);
+
+    half3 indirectDiffuse = bakedGI;
+    half3 indirectSpecular = GlossyEnvironmentReflection(reflectVector, brdfData.perceptualRoughness);
+
+    half3 color = EnvironmentBRDF(brdfData, indirectDiffuse, indirectSpecular, fresnelTerm);
+    return color;
+}
 
 //671:光照混合
 void MixRealtimeAndBakedGI(inout Light light, half3 normalWS, inout half3 bakedGI)
 {
-// #if defined(LIGHTMAP_ON) && defined(_MIXED_LIGHTING_SUBTRACTIVE)
-//     bakedGI = SubtractDirectMainLightFromLightmap(light, normalWS, bakedGI);
-// #endif
+#if defined(LIGHTMAP_ON) && defined(_MIXED_LIGHTING_SUBTRACTIVE)
+   bakedGI = SubtractDirectMainLightFromLightmap(light, normalWS, bakedGI);
+#endif
 }
 
 //702：pbr光照计算
@@ -457,15 +494,15 @@ half4 UniversalFragmentPBR(InputData inputData, SurfaceData surfaceData)
     InitializeBRDFData(surfaceData.albedo, surfaceData.metallic, surfaceData.smoothness, surfaceData.alpha, brdfData);
 
     Light mainLight = GetMainLight(inputData.shadowCoord, inputData.positionWS);
-    
+    //substractive模式下对bakeGI和实时阴影做插值
     MixRealtimeAndBakedGI(mainLight, inputData.normalWS, inputData.bakedGI);
 
-    // half3 color = GlobalIllumination(brdfData, 
-    //                                  inputData.bakedGI, 
-    //                                  inputData.normalWS, inputData.viewDirectionWS);
+    half3 color = GlobalIllumination(brdfData, 
+                                     inputData.bakedGI, 
+                                     inputData.normalWS, inputData.viewDirectionWS);
     // half3 color = GetLighting(surfaceData, mainLight);
-    half3 color = LightingPhysicallyBased(brdfData, mainLight, inputData.normalWS, inputData.viewDirectionWS, specularHighlightsOff);
-    color += inputData.bakedGI;
+    color += LightingPhysicallyBased(brdfData, mainLight, inputData.normalWS, inputData.viewDirectionWS, specularHighlightsOff);
+    // color += inputData.bakedGI;
 #ifdef _ADDITIONAL_LIGHTS
     uint pixelLightCount = GetAdditionalLightsCount();
     for (uint lightIndex = 0u; lightIndex < pixelLightCount; ++lightIndex)

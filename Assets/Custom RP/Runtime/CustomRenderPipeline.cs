@@ -110,7 +110,7 @@ namespace UnityEngine.Rendering.Custom
                 QualitySettings.antiAliasing = asset.msaaSampleCount;
             }
 
-            //Ö»ÓĞ´øÓĞUniversalPipeline»òLightweightPipelineµÄTagµÄSubShader²Å»áÉúĞ§.Ö÷Òª×÷ÓÃÊÇÓÃÓÚ±ê¼Çµ±Ç°Õâ¸öSubShaderÊÇÊôÓÚÄÄ¸ö¹ÜÏßÏÂµÄ.
+            //Ö»ï¿½Ğ´ï¿½ï¿½ï¿½UniversalPipelineï¿½ï¿½LightweightPipelineï¿½ï¿½Tagï¿½ï¿½SubShaderï¿½Å»ï¿½ï¿½ï¿½Ğ§.ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú±ï¿½Çµï¿½Ç°ï¿½ï¿½ï¿½SubShaderï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Âµï¿½.
             Shader.globalRenderPipeline = "UniversalPipeline,LightweightPipeline,CustomPipeline";
 
             Lightmapping.SetDelegate(lightsDelegate);
@@ -120,9 +120,9 @@ namespace UnityEngine.Rendering.Custom
             RenderingUtils.ClearSystemInfoCache();
         }
 
-        //Ã¿Ò»Ö¡Unity¶¼»áµ÷ÓÃRPÊµÀıµÄRender·½·¨
-        //renderContext:¸Ã½á¹¹»áÌá¹©µ½µ±Ç°ÒıÇæµÄÁ¬½Ó£¬ÎÒÃÇ¿ÉÒÔÊ¹ÓÃËüÀ´½øĞĞäÖÈ¾
-        //cameras:Ïà»úµÄÊı×é£¬ÒòÎª¿ÉÒÔÓĞ¶à¸ö»î¶¯Ïà»úÔÚµ±Ç°³¡¾°¡£°´ÕÕÌá¹©µÄÉãÏñ»úË³Ğò½øĞĞäÖÈ¾ÊÇRPµÄÔğÈÎ¡£
+        //Ã¿Ò»Ö¡Unityï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½RPÊµï¿½ï¿½ï¿½ï¿½Renderï¿½ï¿½ï¿½ï¿½
+        //renderContext:ï¿½Ã½á¹¹ï¿½ï¿½ï¿½á¹©ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó£ï¿½ï¿½ï¿½ï¿½Ç¿ï¿½ï¿½ï¿½Ê¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¾
+        //cameras:ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½é£¬ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½ï¿½Ğ¶ï¿½ï¿½ï¿½î¶¯ï¿½ï¿½ï¿½ï¿½Úµï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½á¹©ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¾ï¿½ï¿½RPï¿½ï¿½ï¿½ï¿½ï¿½Î¡ï¿½
         protected override void Render(ScriptableRenderContext renderContext, Camera[] cameras)
         {
             using var profScope = new ProfilingScope(null, ProfilingSampler.Get(URPProfileId.CustomRenderTotal));
@@ -147,7 +147,7 @@ namespace UnityEngine.Rendering.Custom
                 }
                 else
                 {
-                    //sceneÒ³¿¨ÏÂµÄäÖÈ¾Âß¼­
+                    //sceneÒ³ï¿½ï¿½ï¿½Âµï¿½ï¿½ï¿½È¾ï¿½ß¼ï¿½
                     using (new ProfilingScope(null, Profiling.Pipeline.beginCameraRendering))
                     {
                         BeginCameraRendering(renderContext, camera);
@@ -242,7 +242,7 @@ namespace UnityEngine.Rendering.Custom
                         var currCameraRendererType = data?.scriptableRenderer.GetType();
                         if (currCameraRendererType != baseCameraRendererType)
                         {
-                            //todo UIäÖÈ¾ÔİÊ±²»Ö§³Ö
+                            //todo UIï¿½ï¿½È¾ï¿½ï¿½Ê±ï¿½ï¿½Ö§ï¿½ï¿½
                             //var renderer2DType = typeof(Experimental.Rendering.Universal.Renderer2D);
                             //if (currCameraRendererType != renderer2DType && baseCameraRendererType != renderer2DType)
                             //{
@@ -284,7 +284,7 @@ namespace UnityEngine.Rendering.Custom
 
             cameraData = new CameraData();
 
-            //todo ÔİÊ±ÏÈÉèÖÃÒ»ÏÂ ºóÃæÊÇ¸ù¾İstack¸ÄµÄ
+            //todo ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ç¸ï¿½ï¿½ï¿½stackï¿½Äµï¿½
             cameraData.defaultOpaqueSortFlags = SortingCriteria.CommonOpaque;
 
             InitializeStackedCameraData(camera, additionalCameraData, ref cameraData);
@@ -441,8 +441,8 @@ namespace UnityEngine.Rendering.Custom
                 Debug.LogWarning(string.Format("Trying to render {0} with an invalid renderer. Camera rendering will be skipped.", camera.name));
                 return;
             }
-            //ÎÒÃÇÖ»»áäÖÈ¾ÄÇĞ©Ïà»úÄÜ¿´¼ûµÄÎïÌå¡£ËùÒÔ´Ó³¡¾°ÖĞËùÓĞÓĞrenderer×é¼şµÄÎïÌå¿ªÊ¼£¬È»ºóÌŞ³ıµôÄÇĞ©ÂäÔÚÉãÏñ»úÊÓÒ°ÒÔÍâµÄÎïÌå¡£
-            //Ïà»ú»ñÈ¡ÌŞ³ı²ÎÊı
+            //ï¿½ï¿½ï¿½ï¿½Ö»ï¿½ï¿½ï¿½ï¿½È¾ï¿½ï¿½Ğ©ï¿½ï¿½ï¿½ï¿½Ü¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½å¡£ï¿½ï¿½ï¿½Ô´Ó³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½rendererï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½å¿ªÊ¼ï¿½ï¿½È»ï¿½ï¿½ï¿½Ş³ï¿½ï¿½ï¿½ï¿½ï¿½Ğ©ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½å¡£
+            //ï¿½ï¿½ï¿½ï¿½ï¿½È¡ï¿½Ş³ï¿½ï¿½ï¿½ï¿½ï¿½
             if (!TryGetCullingParameters(cameraData, out var cullingParameters))
                 return;
 
@@ -470,10 +470,10 @@ namespace UnityEngine.Rendering.Custom
                 {
                     renderer.SetupCullingParameters(ref cullingParameters, ref cameraData);
                 }
-                //½«µ½Ä¿Ç°ÎªÖ¹ÔÚ CommandBuffer cmd ÖĞÅÅ¶ÓµÄËùÓĞÃüÁî·¢ËÍµ½ ScriptableRenderContext ÉÏÏÂÎÄ,ÔÙÇ¿µ÷Ò»´Î£¬Õâ²»»áÁ¢¼´Ö´ĞĞÃüÁî£¬¶øÊÇ½«ËüÃÇ¸´ÖÆµ½ÉÏÏÂÎÄµÄÄÚ²¿»º³åÇø
+                //ï¿½ï¿½ï¿½ï¿½Ä¿Ç°ÎªÖ¹ï¿½ï¿½ CommandBuffer cmd ï¿½ï¿½ï¿½Å¶Óµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½î·¢ï¿½Íµï¿½ ScriptableRenderContext ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½Ç¿ï¿½ï¿½Ò»ï¿½Î£ï¿½ï¿½â²»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö´ï¿½ï¿½ï¿½ï¿½ï¿½î£¬ï¿½ï¿½ï¿½Ç½ï¿½ï¿½ï¿½ï¿½Ç¸ï¿½ï¿½Æµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Äµï¿½ï¿½Ú²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                 context.ExecuteCommandBuffer(cmd); 
                 cmd.Clear();
-                //ÔÚäÖÈ¾³¡¾°´°¿ÚÊ±£¬ÎÒÃÇ±ØĞëÏÔÊ½µØ½«UIÌí¼Óµ½ÊÀ½ç¼¸ºÎÖĞ£¬·½·¨ÊÇÒÔÏà»ú×÷Îª²ÎÊıµ÷ÓÃScriptableRenderContext.EmitWorldGeometryForSceneView¡£ÔÚĞÂµÄÖ»ÔÚ±à¼­Æ÷ÏÂÔËĞĞµÄPrepareForSceneWindow·½·¨ÖĞµ÷ÓÃ¡£µ±ËüµÄCameraTypeÊôĞÔµÈÓÚCameraTypes.SceneViewÊ±£¬ÎÒÃÇ±ãÄÜÊ¹ÓÃ³¡¾°ÉãÏñ»úäÖÈ¾¡£
+                //ï¿½ï¿½ï¿½ï¿½È¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½Ç±ï¿½ï¿½ï¿½ï¿½ï¿½Ê½ï¿½Ø½ï¿½UIï¿½ï¿½ï¿½Óµï¿½ï¿½ï¿½ï¿½ç¼¸ï¿½ï¿½ï¿½Ğ£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ScriptableRenderContext.EmitWorldGeometryForSceneViewï¿½ï¿½ï¿½ï¿½ï¿½Âµï¿½Ö»ï¿½Ú±à¼­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ğµï¿½PrepareForSceneWindowï¿½ï¿½ï¿½ï¿½ï¿½Ğµï¿½ï¿½Ã¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½CameraTypeï¿½ï¿½ï¿½Ôµï¿½ï¿½ï¿½CameraTypes.SceneViewÊ±ï¿½ï¿½ï¿½ï¿½ï¿½Ç±ï¿½ï¿½ï¿½Ê¹ï¿½Ã³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¾ï¿½ï¿½
 #if UNITY_EDITOR
                 // Emit scene view UI
                 if (isSceneViewCamera)
@@ -481,7 +481,7 @@ namespace UnityEngine.Rendering.Custom
                     ScriptableRenderContext.EmitWorldGeometryForSceneView(camera);
                 }
 #endif
-                //Ò»µ©ÓĞÁËÌŞ³ı²ÎÊı£¬¾Í¿ÉÒÔÊ¹ÓÃËüÃÇ½øĞĞÌŞ³ı¡£ÕâÊÇÍ¨¹ıµ÷ÓÃ¾²Ì¬CullResults.Cull·½·¨£¨½«ÌŞ³ı²ÎÊıºÍÉÏÏÂÎÄ×÷Îª²ÎÊı£©À´Íê³ÉµÄ¡£½á¹ûÊÇÒ»¸öCullResults½á¹¹£¬ÆäÖĞ°üº¬ÓĞ¹Ø¿É¼ûÄÚÈİµÄĞÅÏ¢¡£
+                //Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ş³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¿ï¿½ï¿½ï¿½Ê¹ï¿½ï¿½ï¿½ï¿½ï¿½Ç½ï¿½ï¿½ï¿½ï¿½Ş³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¨ï¿½ï¿½ï¿½ï¿½ï¿½Ã¾ï¿½Ì¬CullResults.Cullï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ş³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÉµÄ¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½CullResultsï¿½á¹¹ï¿½ï¿½ï¿½ï¿½ï¿½Ğ°ï¿½ï¿½ï¿½ï¿½Ğ¹Ø¿É¼ï¿½ï¿½ï¿½ï¿½İµï¿½ï¿½ï¿½Ï¢ï¿½ï¿½
                 var cullResults = context.Cull(ref cullingParameters);
                 InitializeRenderingData(asset, ref cameraData, ref cullResults, anyPostProcessingEnabled, out var renderingData);
 
@@ -496,13 +496,13 @@ namespace UnityEngine.Rendering.Custom
             } // When ProfilingSample goes out of scope, an "EndSample" command is enqueued into CommandBuffer cmd
 
             context.ExecuteCommandBuffer(cmd); 
-            //ÃüÁî»º³åÇøÒªÇó×ÊÔ´ÒÔ½«ÆäÃüÁî´æ´¢ÔÚUnityÒıÇæµÄ±¾»ú¼¶±ğ¡£Èç¹ûÎÒÃÇ²»ÔÙĞèÒªÕâĞ©×ÊÔ´£¬Ôò×îºÃÁ¢¼´ÊÍ·ÅËüÃÇ¡£
+            //ï¿½ï¿½ï¿½î»ºï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½Ô´ï¿½Ô½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½æ´¢ï¿½ï¿½Unityï¿½ï¿½ï¿½ï¿½Ä±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç²ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½Ğ©ï¿½ï¿½Ô´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í·ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½
             CommandBufferPool.Release(cmd);
 
             using (new ProfilingScope(cmd, Profiling.Pipeline.Context.submit))
             {
-                //ÉÏÏÂÎÄ»áÑÓ³ÙÊµ¼ÊäÖÈ¾£¬Ö±µ½ÎÒÃÇÌá½»ËüÎªÖ¹¡£
-                //ÎÒÃÇÈÔÈ»Ã»ÓĞ¿´µ½Ìì¿ÕºĞ³öÏÖÔÚÓÎÏ·´°¿ÚÖĞ¡£ÄÇÊÇÒòÎªÎÒÃÇ¶ÔÉÏÏÂÎÄ·¢³öµÄÃüÁîÊÇ»º³åµÄ¡£Êµ¼ÊµÄ¹¤×÷ÔÚÎÒÃÇÍ¨¹ıSubmit·½·¨½«ÆäÌá½»Ö´ĞĞºó·¢Éú
+                //ï¿½ï¿½ï¿½ï¿½ï¿½Ä»ï¿½ï¿½Ó³ï¿½Êµï¿½ï¿½ï¿½ï¿½È¾ï¿½ï¿½Ö±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½á½»ï¿½ï¿½ÎªÖ¹ï¿½ï¿½
+                //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È»Ã»ï¿½Ğ¿ï¿½ï¿½ï¿½ï¿½ï¿½ÕºĞ³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½ï¿½Ğ¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½Ç¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç»ï¿½ï¿½ï¿½Ä¡ï¿½Êµï¿½ÊµÄ¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¨ï¿½ï¿½Submitï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½á½»Ö´ï¿½Ğºï¿½ï¿½ï¿½
                 context.Submit(); 
             }
 
@@ -718,6 +718,7 @@ namespace UnityEngine.Rendering.Custom
             using var profScope = new ProfilingScope(null, Profiling.Pipeline.setupPerFrameShaderConstants);
 
             // When glossy reflections are OFF in the shader we set a constant color to use as indirect specular
+            //æŸä¸ªå¯¹è±¡çš„å…‰ç…§æ¢é’ˆæˆ–å…‰ç…§è´´å›¾ä¸å­˜åœ¨æˆ–æœªå¯ç”¨ï¼Œç³»ç»Ÿä¼šå°†å®ƒç”¨ä½œæœ€ç»ˆçš„å›é€€é¡¹
             SphericalHarmonicsL2 ambientSH = RenderSettings.ambientProbe;
             Color linearGlossyEnvColor = new Color(ambientSH[0, 0], ambientSH[1, 0], ambientSH[2, 0]) * RenderSettings.reflectionIntensity;
             Color glossyEnvColor = CoreUtils.ConvertLinearToActiveColorSpace(linearGlossyEnvColor);

@@ -6,6 +6,14 @@ using UnityEngine.Experimental.GlobalIllumination;
 
 namespace UnityEngine.Rendering.Custom
 {
+
+    public enum MixedLightingSetup
+    {
+        None,
+        ShadowMask,
+        Subtractive,
+    };
+
     public struct RenderingData
     {
         public CullingResults cullResults;
@@ -156,6 +164,7 @@ namespace UnityEngine.Rendering.Custom
 
     internal static class ShaderPropertyId
     {
+        //某个对象的光照探针或光照贴图不存在或未启用，系统会将它用作最终的回退项
         public static readonly int glossyEnvironmentColor = Shader.PropertyToID("_GlossyEnvironmentColor");
         public static readonly int subtractiveShadowColor = Shader.PropertyToID("_SubtractiveShadowColor");
 
@@ -211,9 +220,9 @@ namespace UnityEngine.Rendering.Custom
         public static readonly string AdditionalLightsPixel = "_ADDITIONAL_LIGHTS";
         public static readonly string AdditionalLightShadows = "_ADDITIONAL_LIGHT_SHADOWS";
         public static readonly string SoftShadows = "_SHADOWS_SOFT";//hadowLight.light.shadows == LightShadows.Soft && shadowData.supportsSoftShadows;
-        public static readonly string MixedLightingSubtractive = "_MIXED_LIGHTING_SUBTRACTIVE"; // Backward compatibility
-        public static readonly string LightmapShadowMixing = "LIGHTMAP_SHADOW_MIXING";
-        public static readonly string ShadowsShadowMask = "SHADOWS_SHADOWMASK";
+        public static readonly string MixedLightingSubtractive = "_MIXED_LIGHTING_SUBTRACTIVE"; //混合模式 Subtractive是否开启  light组件为mix且shadow打开
+        public static readonly string LightmapShadowMixing = "LIGHTMAP_SHADOW_MIXING"; //是否开启混合  isSubtractive || isShadowMaskAlways
+        public static readonly string ShadowsShadowMask = "SHADOWS_SHADOWMASK"; //混合模式 ShadowMask是否开启 light组件为mix且shadow打开 （优先以mainlight的mix为主）
 
         public static readonly string LinearToSRGBConversion = "_LINEAR_TO_SRGB_CONVERSION";
 

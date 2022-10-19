@@ -23,7 +23,7 @@ namespace UnityEngine.Rendering.Custom.Internal
 
         const string k_SetupLightConstants = "Setup Light Constants";//28
         private static readonly ProfilingSampler m_ProfilingSampler = new ProfilingSampler(k_SetupLightConstants);//29
-
+        MixedLightingSetup m_MixedLightingSetup;
         Vector4[] m_AdditionalLightPositions;
         Vector4[] m_AdditionalLightColors;
         Vector4[] m_AdditionalLightAttenuations;
@@ -75,19 +75,51 @@ namespace UnityEngine.Rendering.Custom.Internal
                     additionalLightsCount > 0 && additionalLightsPerVertex);
                 CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.AdditionalLightsPixel,
                     additionalLightsCount > 0 && !additionalLightsPerVertex);
+                
+                bool isShadowMask = renderingData.lightData.supportsMixedLighting && m_MixedLightingSetup == MixedLightingSetup.ShadowMask;
+                bool isShadowMaskAlways = isShadowMask && QualitySettings.shadowmaskMode == ShadowmaskMode.Shadowmask;
+                bool isSubtractive = renderingData.lightData.supportsMixedLighting && m_MixedLightingSetup == MixedLightingSetup.Subtractive;
+                CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.LightmapShadowMixing, isSubtractive || isShadowMaskAlways);
+                CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.ShadowsShadowMask, isShadowMask);
+                CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.MixedLightingSubtractive, isSubtractive); // Backward compatibility
             }
             context.ExecuteCommandBuffer(cmd);
             CommandBufferPool.Release(cmd);
         }
-        //96：获取主光源的方向，颜色
+        //96：获取主光源的方向，颜色,设置混合烘焙模式（Subtractive or ShadowMask）
         void InitializeLightConstants(NativeArray<VisibleLight> lights, int lightIndex, out Vector4 lightPos, out Vector4 lightColor, out Vector4 lightAttenuation, out Vector4 lightSpotDir, out Vector4 lightOcclusionProbeChannel)
         {
             CustomRenderPipeline.InitializeLightConstants_Common(lights, lightIndex, out lightPos, out lightColor, out lightAttenuation, out lightSpotDir, out lightOcclusionProbeChannel);
+
+            if (lightIndex < 0)
+                return;
+
+            VisibleLight lightData = lights[lightIndex];
+            Light light = lightData.light;
+
+            if (light == null)
+                return;
+
+            if (light.bakingOutput.lightmapBakeType == LightmapBakeType.Mixed &&
+                lightData.light.shadows != LightShadows.None &&
+                m_MixedLightingSetup == MixedLightingSetup.None)
+            {
+                switch (light.bakingOutput.mixedLightingMode)
+                {
+                    case MixedLightingMode.Subtractive:
+                        m_MixedLightingSetup = MixedLightingSetup.Subtractive;
+                        break;
+                    case MixedLightingMode.Shadowmask:
+                        m_MixedLightingSetup = MixedLightingSetup.ShadowMask;
+                        break;
+                }
+            }
         }
 
         //127：设置主，副光源的方向，颜色
         void SetupShaderLightConstants(CommandBuffer cmd, ref RenderingData renderingData)
         {
+            m_MixedLightingSetup = MixedLightingSetup.None;
             SetupMainLightConstants(cmd, ref renderingData.lightData);
             SetupAdditionalLightConstants(cmd, ref renderingData);
         }
