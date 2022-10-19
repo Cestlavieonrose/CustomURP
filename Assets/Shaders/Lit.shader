@@ -13,6 +13,7 @@ Shader "CustomRP/Lit"
         [Toggle(_ALPHATEST_ON)] _Clipping("Alpha Clipping", Float) = 0
         [Toggle(_ALPHAPREMULTIPLY_ON)] _PremulAlpha("Alpha Premultiply", Float) = 0
         [Toggle(_RECEIVE_SHADOWS_OFF)] _ReceiveShadowsOff ("不接受阴影", Float) = 0
+        _Shadows ("是否接受阴影投射", Float) = 0
         //设置混合模式
         [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend ("Src Blend", Float) = 1
         [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend ("Dst Blend", Float) = 0
@@ -22,6 +23,9 @@ Shader "CustomRP/Lit"
         [Toggle(_EMISSION)] _Emision("自发光", Float) = 0
         [HDR] _EmissionColor("Color", Color) = (0,0,0)
         _EmissionMap("Emission", 2D) = "white" {}
+
+        [HideInInspector] _MainTex("Texture for lightmap", 2D) = "white" {}
+        [HideInInspector] _Color("Color for lightmap", Color) = (0.5, 0.5, 0.5, 1.0)
     }
     SubShader
     {

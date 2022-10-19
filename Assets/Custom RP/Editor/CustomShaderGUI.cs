@@ -4,6 +4,11 @@ using UnityEngine.Rendering;
 
 public class CustomShaderGUI : ShaderGUI
 {
+    enum ShadowMode 
+    {
+        On = 0,
+        Off
+    }
     MaterialEditor editor;
     Object[] materials;
     MaterialProperty[] properties;
@@ -24,7 +29,47 @@ public class CustomShaderGUI : ShaderGUI
             FadePreset();
             TransparentPreset();
         }
+
+        if (EditorGUI.EndChangeCheck())
+        {
+           // CopyLightMappingProperties();
+           SetShadowCasterPass();
+        }
         // ReceiveShadowPreset();
+    }
+
+    //设置材质的shadowcaster pass 是否启用
+    void SetShadowCasterPass()
+    {
+        MaterialProperty shadows = FindProperty("_Shadows", properties, false);
+        if (shadows == null || shadows.hasMixedValue)
+        {
+            return;
+        }
+
+        bool enabled = shadows.floatValue < (float)ShadowMode.Off;
+        foreach(Material m in materials)
+        {
+            m.SetShaderPassEnabled("ShadowCaster", enabled);
+        }
+    }
+
+    void CopyLightMappingProperties()
+    {
+        MaterialProperty mainTex = FindProperty("_MainTex", properties, false);
+        MaterialProperty baseMap = FindProperty("_BaseMap", properties, false);
+
+        if(mainTex != null && baseMap != null)
+        {
+            mainTex.textureValue = baseMap.textureValue;
+            mainTex.textureScaleAndOffset = baseMap.textureScaleAndOffset;
+        }
+        MaterialProperty color = FindProperty("_Color", properties, false);
+        MaterialProperty baseColor = FindProperty("_BaseColor", properties, false);
+        if(color != null && baseColor != null)
+        {
+            color.colorValue = baseColor.colorValue;
+        }
     }
 
     //烘焙自发光
