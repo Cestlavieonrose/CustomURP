@@ -20,10 +20,11 @@
     #define OUTPUT_SH(normalWS, OUT) OUT.xyz = SampleSHVertex(normalWS)
 #endif
 
-// // Renamed -> LIGHTMAP_SHADOW_MIXING
-// #if !defined(_MIXED_LIGHTING_SUBTRACTIVE) && defined(LIGHTMAP_SHADOW_MIXING) && !defined(SHADOWS_SHADOWMASK)
-//     #define _MIXED_LIGHTING_SUBTRACTIVE
-// #endif
+// Renamed -> LIGHTMAP_SHADOW_MIXING     SUBTRACTIVE或者是shadowmask模式下的ualitySettings.shadowmaskMode == ShadowmaskMode.Shadowmask模式
+//todo 似乎这个条件就不可能成立吧
+#if !defined(_MIXED_LIGHTING_SUBTRACTIVE) && defined(LIGHTMAP_SHADOW_MIXING) && !defined(SHADOWS_SHADOWMASK)
+    #define _MIXED_LIGHTING_SUBTRACTIVE
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 //                         44: Light Helpers                                    //
@@ -50,10 +51,10 @@ Light GetMainLight()
     return light;
 }
 
-Light GetMainLight(float4 shadowCoord, float3 positionWS)
+Light GetMainLight(float4 shadowCoord, float3 positionWS, half4 shadowMask)
 {
     Light light = GetMainLight();
-    light.shadowAttenuation = MainLightShadow(shadowCoord, positionWS);
+    light.shadowAttenuation = MainLightShadow(shadowCoord, positionWS, shadowMask, _MainLightOcclusionProbes);
     return light;
 }
 
@@ -493,7 +494,9 @@ half4 UniversalFragmentPBR(InputData inputData, SurfaceData surfaceData)
     // NOTE: can modify alpha
     InitializeBRDFData(surfaceData.albedo, surfaceData.metallic, surfaceData.smoothness, surfaceData.alpha, brdfData);
 
-    Light mainLight = GetMainLight(inputData.shadowCoord, inputData.positionWS);
+    half4 shadowMask = inputData.shadowMask;
+
+    Light mainLight = GetMainLight(inputData.shadowCoord, inputData.positionWS, shadowMask);
     //substractive模式下对bakeGI和实时阴影做插值
     MixRealtimeAndBakedGI(mainLight, inputData.normalWS, inputData.bakedGI);
 
@@ -501,7 +504,7 @@ half4 UniversalFragmentPBR(InputData inputData, SurfaceData surfaceData)
                                      inputData.bakedGI, 
                                      inputData.normalWS, inputData.viewDirectionWS);
     // half3 color = GetLighting(surfaceData, mainLight);
-    color += LightingPhysicallyBased(brdfData, mainLight, inputData.normalWS, inputData.viewDirectionWS, specularHighlightsOff);
+   color += LightingPhysicallyBased(brdfData, mainLight, inputData.normalWS, inputData.viewDirectionWS, specularHighlightsOff);
     // color += inputData.bakedGI;
 #ifdef _ADDITIONAL_LIGHTS
     uint pixelLightCount = GetAdditionalLightsCount();

@@ -9,6 +9,7 @@ namespace UnityEngine.Rendering.Custom.Internal
         {
             public static int _MainLightPosition;   // 13:主光源方向
             public static int _MainLightColor;      // 14：主光源颜色
+            public static int _MainLightOcclusionProbesChannel;    // Deferred?
 
             public static int _AdditionalLightsCount; //17：附加光数量
             public static int _AdditionalLightsPosition;
@@ -37,6 +38,7 @@ namespace UnityEngine.Rendering.Custom.Internal
             m_UseStructuredBuffer = RenderingUtils.useStructuredBuffer;
             LightConstantBuffer._MainLightPosition = Shader.PropertyToID("_MainLightPosition");//44
             LightConstantBuffer._MainLightColor = Shader.PropertyToID("_MainLightColor");//45
+            LightConstantBuffer._MainLightOcclusionProbesChannel = Shader.PropertyToID("_MainLightOcclusionProbes");
             LightConstantBuffer._AdditionalLightsCount = Shader.PropertyToID("_AdditionalLightsCount");//47
 
             if (m_UseStructuredBuffer)
@@ -132,6 +134,7 @@ namespace UnityEngine.Rendering.Custom.Internal
 
             cmd.SetGlobalVector(LightConstantBuffer._MainLightPosition, lightPos);
             cmd.SetGlobalVector(LightConstantBuffer._MainLightColor, lightColor);
+            cmd.SetGlobalVector(LightConstantBuffer._MainLightOcclusionProbesChannel, lightOcclusionChannel);
         }
         //147:获取并设置附加光的数量，颜色，位置等信息
         void SetupAdditionalLightConstants(CommandBuffer cmd, ref RenderingData renderingData)

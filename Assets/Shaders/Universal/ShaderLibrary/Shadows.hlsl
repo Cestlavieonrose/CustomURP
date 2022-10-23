@@ -12,7 +12,26 @@
         #define MAIN_LIGHT_CALCULATE_SHADOWS  //材质开启接受，主光源开启阴影caster
     #endif
 #endif
+
+#define SHADOWMASK_NAME unity_ShadowMask
+#define SHADOWMASK_SAMPLER_NAME samplerunity_ShadowMask
+#define SHADOWMASK_SAMPLE_EXTRA_ARGS
+
+//35:
+#if defined(SHADOWS_SHADOWMASK) && defined(LIGHTMAP_ON)
+    #define SAMPLE_SHADOWMASK(uv) SAMPLE_TEXTURE2D_LIGHTMAP(SHADOWMASK_NAME, SHADOWMASK_SAMPLER_NAME, uv SHADOWMASK_SAMPLE_EXTRA_ARGS);
+#elif !defined (LIGHTMAP_ON)
+    #define SAMPLE_SHADOWMASK(uv) unity_ProbesOcclusion;
+#else
+    #define SAMPLE_SHADOWMASK(uv) half4(1, 1, 1, 1);
+#endif
+
+
 #define REQUIRES_WORLD_SPACE_POS_INTERPOLATOR //Varyings结构体中是否加入positionWS
+
+#if defined(LIGHTMAP_ON) || defined(LIGHTMAP_SHADOW_MIXING) || defined(SHADOWS_SHADOWMASK)
+#define CALCULATE_BAKED_SHADOWS
+#endif
 
 
 TEXTURE2D_SHADOW(_MainLightShadowmapTexture);
@@ -175,7 +194,11 @@ half MainLightRealtimeShadow(float4 shadowCoord)
 
 half MixRealtimeAndBakedShadows(half realtimeShadow, half bakedShadow, half shadowFade)
 {
+#if defined(LIGHTMAP_SHADOW_MIXING)
+    return min(lerp(realtimeShadow, 1, shadowFade), bakedShadow);
+#else
     return lerp(realtimeShadow, bakedShadow, shadowFade);
+#endif
 }
 //突然切断阴影最大距离处的阴影会显得很突兀，我们通过一种线性淡化的方式使阴影过渡变得柔和自然一些。阴影淡化应从阴影最大距离之前的一段距离开始，直到最大距离时阴影强度为0
 half GetShadowFade(float3 positionWS)
@@ -187,15 +210,36 @@ half GetShadowFade(float3 positionWS)
     return fade * fade;
 }
 
+half BakedShadow(half4 shadowMask, half4 occlusionProbeChannels)
+{
+    // Here occlusionProbeChannels used as mask selector to select shadows in shadowMask
+    // If occlusionProbeChannels all components are zero we use default baked shadow value 1.0
+    // This code is optimized for mobile platforms:
+    // half bakedShadow = any(occlusionProbeChannels) ? dot(shadowMask, occlusionProbeChannels) : 1.0h;
+    //occlusionProbeChannels说明主光源在rgba哪个通道，通过点击可以把主光源通道的shadowmask颜色值保留下来
+    half bakedShadow = 1.0h + dot(shadowMask - 1.0h, occlusionProbeChannels);
+    return bakedShadow;
+}
+
 //325:获取主光源的阴影衰减
-half MainLightShadow(float4 shadowCoord, float3 positionWS)
+half MainLightShadow(float4 shadowCoord, float3 positionWS, half4 shadowMask, half4 occlusionProbeChannels)
 {
     half realtimeShadow = MainLightRealtimeShadow(shadowCoord);
+
+#ifdef CALCULATE_BAKED_SHADOWS
+    half bakedShadow = BakedShadow(shadowMask, occlusionProbeChannels);
+#else
     half bakedShadow = 1.0h;
+#endif
+
 #ifdef MAIN_LIGHT_CALCULATE_SHADOWS
     half shadowFade = GetShadowFade(positionWS);
 #else
     half shadowFade = 1.0h;
+#endif
+
+#if defined(_MAIN_LIGHT_SHADOWS_CASCADE) && defined(CALCULATE_BAKED_SHADOWS)
+    shadowFade = shadowCoord.w == 4 ? 1.0h : shadowFade;
 #endif
     return MixRealtimeAndBakedShadows(realtimeShadow, bakedShadow, shadowFade);
 }

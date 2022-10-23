@@ -64,6 +64,9 @@ Shader "CustomRP/Lit"
             #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF  //是否关闭环境反射球计算，材质上设置
             #pragma shader_feature_local _RECEIVE_SHADOWS_OFF //材质是否开启接受光照
             #pragma shader_feature_local_fragment _EMISSION //自发光
+
+            #pragma multi_compile _ LIGHTMAP_SHADOW_MIXING //substractive 和 shadowmask的非distance下都开启
+            #pragma multi_compile _ SHADOWS_SHADOWMASK
             
 
             // Unity defined keywords

@@ -221,7 +221,7 @@ namespace UnityEngine.Rendering.Custom
         public static readonly string AdditionalLightShadows = "_ADDITIONAL_LIGHT_SHADOWS";
         public static readonly string SoftShadows = "_SHADOWS_SOFT";//hadowLight.light.shadows == LightShadows.Soft && shadowData.supportsSoftShadows;
         public static readonly string MixedLightingSubtractive = "_MIXED_LIGHTING_SUBTRACTIVE"; //混合模式 Subtractive是否开启  light组件为mix且shadow打开
-        public static readonly string LightmapShadowMixing = "LIGHTMAP_SHADOW_MIXING"; //是否开启混合  isSubtractive || isShadowMaskAlways
+        public static readonly string LightmapShadowMixing = "LIGHTMAP_SHADOW_MIXING"; //是否开启混合  isSubtractive || QualitySettings.shadowmaskMode == ShadowmaskMode.Shadowmask
         public static readonly string ShadowsShadowMask = "SHADOWS_SHADOWMASK"; //混合模式 ShadowMask是否开启 light组件为mix且shadow打开 （优先以mainlight的mix为主）
 
         public static readonly string LinearToSRGBConversion = "_LINEAR_TO_SRGB_CONVERSION";
@@ -359,6 +359,15 @@ namespace UnityEngine.Rendering.Custom
             //我们在CustomRenderPipeline脚本的构造函数中通过将GraphicsSettings.lightsUseLinearIntensity设为true
             //来将光强转换到线性空间。
             lightColor = lightData.finalColor;
+
+            Light light = lightData.light;
+
+            if (light != null && light.bakingOutput.lightmapBakeType == LightmapBakeType.Mixed &&
+                0 <= light.bakingOutput.occlusionMaskChannel &&
+                light.bakingOutput.occlusionMaskChannel < 4)
+            {
+                lightOcclusionProbeChannel[light.bakingOutput.occlusionMaskChannel] = 1.0f;
+            }
         }
     }
 

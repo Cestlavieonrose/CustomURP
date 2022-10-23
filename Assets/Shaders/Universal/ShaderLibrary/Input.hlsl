@@ -29,6 +29,7 @@ half4 _SubtractiveShadowColor; //在Subtractive下Unity设置的阴影颜色
 //主光源，方向光：方向，否则传递位置
 float4 _MainLightPosition;//41
 half4 _MainLightColor;//42
+half4 _MainLightOcclusionProbes; //43:rgba：哪一个值为1表示主光源的shadowmask的对应通道
 
 half4 _AdditionalLightsCount;//49
 

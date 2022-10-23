@@ -28,12 +28,15 @@ real4 unity_WorldTransformParams; //107
 real4 unity_LightData;
 real4 unity_LightIndices[2];
 
+float4 unity_ProbesOcclusion; //shadowmask不但会烘焙到贴图中，同时也会烘焙到探针中，动态物体就通过这个探针获取阴影遮蔽
+
 // Reflection Probe 0 block feature
 // HDR environment map decode instructions
 real4 unity_SpecCube0_HDR;
 
 // Lightmap block feature
 float4 unity_LightmapST;//120:lightmap开启下，对于每一个渲染对象在lightmap中的位置，xy  缩放  zw 偏移
+float4 unity_LightmapIndex;
 float4 unity_DynamicLightmapST;
 
 // 125：SH block feature 采样光照探针的时候使用
@@ -57,6 +60,10 @@ SAMPLER(samplerunity_SpecCube0);
 //209： Main lightmap
 TEXTURE2D(unity_Lightmap);//lightmap贴图
 SAMPLER(samplerunity_Lightmap);
+
+//219:shadowmask贴图
+TEXTURE2D(unity_ShadowMask);
+SAMPLER(samplerunity_ShadowMask);
 
 #endif // UNIVERSAL_SHADER_VARIABLES_INCLUDED
 
