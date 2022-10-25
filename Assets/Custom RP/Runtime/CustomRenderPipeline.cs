@@ -699,7 +699,8 @@ namespace UnityEngine.Rendering.Custom
         {
             using var profScope = new ProfilingScope(null, Profiling.Pipeline.getPerObjectLightFlags);
 
-            var configuration = PerObjectData.ReflectionProbes | PerObjectData.Lightmaps | PerObjectData.LightProbe | PerObjectData.LightData | PerObjectData.OcclusionProbe | PerObjectData.ShadowMask;
+            var configuration = PerObjectData.ReflectionProbes | PerObjectData.Lightmaps | PerObjectData.LightProbe 
+                                    | PerObjectData.LightData | PerObjectData.OcclusionProbe | PerObjectData.ShadowMask;
 
             if (additionalLightsCount > 0)
             {
