@@ -700,6 +700,7 @@ namespace UnityEngine.Rendering.Custom
             using var profScope = new ProfilingScope(null, Profiling.Pipeline.getPerObjectLightFlags);
             //ShadowMask  阴影蒙版贴图，对应unity_ShadowMask，shaowmask烘焙的情况下，对于静态物体并且是开lightmap的情况下，会从这里获取阴影信息
             //OcclusionProbe  遮蔽探针，对应unity_ProbesOcclusion，shaowmask烘焙的情况下，对于动态物体会从这里获取阴影信息
+            //ReflectionProbes  反射探针，对应unity_SpecCube0，默认情况下是天空盒，它是一个立方体纹理（Cube Map）
             var configuration = PerObjectData.ReflectionProbes | PerObjectData.Lightmaps | PerObjectData.LightProbe 
                                     | PerObjectData.LightData | PerObjectData.OcclusionProbe | PerObjectData.ShadowMask;
 

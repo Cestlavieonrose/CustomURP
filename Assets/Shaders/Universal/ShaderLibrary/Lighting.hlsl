@@ -410,7 +410,7 @@ half3 SubtractDirectMainLightFromLightmap(Light mainLight, half3 normalWS, half3
 
 half3 GlossyEnvironmentReflection(half3 reflectVector, half perceptualRoughness)
 {
-#if !defined(_ENVIRONMENTREFLECTIONS_OFF)//环境光反射球没关闭
+#if !defined(_ENVIRONMENTREFLECTIONS_OFF)//环境光反射球没关闭（在材质中可以开启关闭）
     half mip = PerceptualRoughnessToMipmapLevel(perceptualRoughness);
     half4 encodedIrradiance = SAMPLE_TEXTURECUBE_LOD(unity_SpecCube0, samplerunity_SpecCube0, reflectVector, mip);
 

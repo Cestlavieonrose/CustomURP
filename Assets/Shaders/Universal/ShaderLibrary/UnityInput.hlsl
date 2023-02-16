@@ -20,7 +20,7 @@ CBUFFER_START(UnityPerDraw) //102
 //定义一个从模型空间转换到世界空间的转换矩阵
 float4x4 unity_ObjectToWorld;//104
 float4x4 unity_WorldToObject;//105
-float4 unity_LODFade;//106
+float4 unity_LODFade;//106 x is the fade value ranging within [0,1]. y is x quantized into 16 levels
 real4 unity_WorldTransformParams; //107
 
 // Light Indices block feature
@@ -53,7 +53,8 @@ float4x4 unity_MatrixV; //192
 //定义一个从世界空间转换到裁剪空间的矩阵
 float4x4 unity_MatrixVP;//195
 
-// Unity specific
+// Unity specific 
+//镜面反射反映了环境，默认情况下是天空盒，它是一个立方体纹理（Cube Map），这里声明该纹理和对应采样器。
 TEXTURECUBE(unity_SpecCube0);
 SAMPLER(samplerunity_SpecCube0);
 
