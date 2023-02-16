@@ -67,7 +67,7 @@
 #if UNITY_ANY_INSTANCING_ENABLED
 
     // A global instance ID variable that functions can directly access.
-    static uint unity_InstanceID;
+    static uint unity_InstanceID;//当前支持gpu instancing的drawcall对象的实际id
 
     // Don't make UnityDrawCallInfo an actual CB on GL
     #if !defined(SHADER_API_GLES3) && !defined(SHADER_API_GLCORE)
