@@ -21,7 +21,7 @@
 #endif
 
 // Renamed -> LIGHTMAP_SHADOW_MIXING     SUBTRACTIVE或者是shadowmask模式下的ualitySettings.shadowmaskMode == ShadowmaskMode.Shadowmask模式
-//todo 似乎这个条件就不可能成立吧
+//shodowmask模式下 且不是distance shadowmask模式下，也需要阴影直接混合
 #if !defined(_MIXED_LIGHTING_SUBTRACTIVE) && defined(LIGHTMAP_SHADOW_MIXING) && !defined(SHADOWS_SHADOWMASK)
     #define _MIXED_LIGHTING_SUBTRACTIVE
 #endif

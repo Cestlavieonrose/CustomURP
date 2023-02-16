@@ -221,7 +221,7 @@ namespace UnityEngine.Rendering.Custom
         public static readonly string AdditionalLightShadows = "_ADDITIONAL_LIGHT_SHADOWS";
         public static readonly string SoftShadows = "_SHADOWS_SOFT";//hadowLight.light.shadows == LightShadows.Soft && shadowData.supportsSoftShadows;
         public static readonly string MixedLightingSubtractive = "_MIXED_LIGHTING_SUBTRACTIVE"; //混合模式 Subtractive是否开启  light组件为mix且shadow打开
-        public static readonly string LightmapShadowMixing = "LIGHTMAP_SHADOW_MIXING"; //是否开启混合  isSubtractive || QualitySettings.shadowmaskMode == ShadowmaskMode.Shadowmask
+        public static readonly string LightmapShadowMixing = "LIGHTMAP_SHADOW_MIXING"; //是否开启混合  isSubtractive || QualitySettings.shadowmaskMode == ShadowmaskMode.Shadowmask//相当于不是distance shadowmask
         public static readonly string ShadowsShadowMask = "SHADOWS_SHADOWMASK"; //混合模式 ShadowMask是否开启 light组件为mix且shadow打开 （优先以mainlight的mix为主）
 
         public static readonly string LinearToSRGBConversion = "_LINEAR_TO_SRGB_CONVERSION";

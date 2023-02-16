@@ -698,7 +698,8 @@ namespace UnityEngine.Rendering.Custom
         static PerObjectData GetPerObjectLightFlags(int additionalLightsCount)
         {
             using var profScope = new ProfilingScope(null, Profiling.Pipeline.getPerObjectLightFlags);
-
+            //ShadowMask  阴影蒙版贴图，对应unity_ShadowMask，shaowmask烘焙的情况下，对于静态物体并且是开lightmap的情况下，会从这里获取阴影信息
+            //OcclusionProbe  遮蔽探针，对应unity_ProbesOcclusion，shaowmask烘焙的情况下，对于动态物体会从这里获取阴影信息
             var configuration = PerObjectData.ReflectionProbes | PerObjectData.Lightmaps | PerObjectData.LightProbe 
                                     | PerObjectData.LightData | PerObjectData.OcclusionProbe | PerObjectData.ShadowMask;
 

@@ -28,7 +28,7 @@
 
 
 #define REQUIRES_WORLD_SPACE_POS_INTERPOLATOR //Varyings结构体中是否加入positionWS
-
+//lightmap，substractive，not distanceshadowmask
 #if defined(LIGHTMAP_ON) || defined(LIGHTMAP_SHADOW_MIXING) || defined(SHADOWS_SHADOWMASK)
 #define CALCULATE_BAKED_SHADOWS
 #endif
@@ -197,7 +197,7 @@ half MixRealtimeAndBakedShadows(half realtimeShadow, half bakedShadow, half shad
 #if defined(LIGHTMAP_SHADOW_MIXING)
     return min(lerp(realtimeShadow, 1, shadowFade), bakedShadow);
 #else
-    return lerp(realtimeShadow, bakedShadow, shadowFade);
+    return lerp(realtimeShadow, bakedShadow, shadowFade);//distance shadowmask 或者realtime
 #endif
 }
 //突然切断阴影最大距离处的阴影会显得很突兀，我们通过一种线性淡化的方式使阴影过渡变得柔和自然一些。阴影淡化应从阴影最大距离之前的一段距离开始，直到最大距离时阴影强度为0

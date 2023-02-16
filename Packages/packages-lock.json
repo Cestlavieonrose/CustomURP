@@ -267,7 +267,9 @@
       "depth": 0,
       "source": "builtin",
       "dependencies": {
-        "com.unity.modules.physics": "1.0.0"
+        "com.unity.modules.warpengine": "1.0.0",
+        "com.unity.modules.physics": "1.0.0",
+        "com.unity.modules.animation": "1.0.0"
       }
     },
     "com.unity.modules.director": {
@@ -468,6 +470,16 @@
         "com.unity.modules.jsonserialize": "1.0.0",
         "com.unity.modules.physics": "1.0.0",
         "com.unity.modules.xr": "1.0.0"
+      }
+    },
+    "com.unity.modules.warpengine": {
+      "version": "1.0.0",
+      "depth": 1,
+      "source": "builtin",
+      "dependencies": {
+        "com.unity.modules.physics": "1.0.0",
+        "com.unity.modules.animation": "1.0.0",
+        "com.unity.modules.terrain": "1.0.0"
       }
     },
     "com.unity.modules.wind": {

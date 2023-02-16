@@ -56,7 +56,9 @@ Shader "CustomRP/Lit"
             // Universal Pipeline keywords
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS//MainLightShadowCasterPass.cs中如果进行主光源阴影投射就开启
-            #pragma multi_compile _ _MIXED_LIGHTING_SUBTRACTIVE //light为mix，且shadow设置部位none（主要控制bakeGI和实时阴影的混合，因此light的shadow必须开），混合模式为substractive的时候开启
+            #pragma multi_compile _ _MIXED_LIGHTING_SUBTRACTIVE //light为mix，且shadow设置不为none（主要控制bakeGI和实时阴影的混合，因此light的shadow必须开），混合模式为substractive的时候开启
+            #pragma multi_compile _ LIGHTMAP_SHADOW_MIXING //substractive 和 shadowmask的非distance下都开启
+            #pragma multi_compile _ SHADOWS_SHADOWMASK //和_MIXED_LIGHTING_SUBTRACTIVE是一对互斥的
             // Material Keywords
             #pragma shader_feature_local_fragment _ALPHAPREMULTIPLY_ON
             #pragma shader_feature_local_fragment _ALPHATEST_ON
@@ -64,9 +66,6 @@ Shader "CustomRP/Lit"
             #pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF  //是否关闭环境反射球计算，材质上设置
             #pragma shader_feature_local _RECEIVE_SHADOWS_OFF //材质是否开启接受光照
             #pragma shader_feature_local_fragment _EMISSION //自发光
-
-            #pragma multi_compile _ LIGHTMAP_SHADOW_MIXING //substractive 和 shadowmask的非distance下都开启
-            #pragma multi_compile _ SHADOWS_SHADOWMASK
             
 
             // Unity defined keywords
